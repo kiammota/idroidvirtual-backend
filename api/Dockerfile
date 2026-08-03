@@ -1,5 +1,5 @@
 FROM golang:1.26-alpine AS builder
-
+ENV TZ=America/Sao_Paulo
 WORKDIR /app
 
 COPY go.mod go.sum ./

@@ -1,0 +1,14 @@
+package models
+
+import "time"
+
+type Venda struct {
+	ID            int64     `json:"id"`
+	ProdutoID     int64     `json:"produto_id"`
+	UsuarioID     int64     `json:"usuario_id"`
+	Quantidade    int       `json:"quantidade"`
+	Total         float64   `json:"total"`
+	TipoPagamento string    `json:"tipo_pagamento"`
+	Status        string    `json:"status"` // "CONCLUIDA" ou "CANCELADA"
+	CriadoEm      time.Time `json:"criado_em"`
+}

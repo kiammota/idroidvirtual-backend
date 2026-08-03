@@ -1,82 +1,62 @@
--- Tabela de Usuários
-CREATE TABLE IF NOT EXISTS usuarios (
-    id BIGSERIAL PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    nome VARCHAR(255) NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+package models
 
-CREATE INDEX idx_usuarios_email ON usuarios(email);
+import "time"
 
--- Tabela de Produtos (Estoque)
-CREATE TABLE IF NOT EXISTS produtos (
-    id BIGSERIAL PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    preco DECIMAL(10, 2) NOT NULL,
-    estoque INT NOT NULL DEFAULT 0,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+type Usuario struct {
+	ID        int64     `json:"id"`
+	Email     string    `json:"email"`
+	Nome      string    `json:"nome"`
+	Senha     string    `json:"senha"`
+	CriadoEm  time.Time `json:"criado_em"`
+}
 
-CREATE INDEX idx_produtos_nome ON produtos(nome);
+type Produto struct {
+	ID           int64     `json:"id"`
+	Nome         string    `json:"nome"`
+	Preco        float64   `json:"preco"`
+	Estoque      int       `json:"estoque"`
+	CriadoEm     time.Time `json:"criado_em"`
+	AtualizadoEm time.Time `json:"atualizado_em"`
+}
 
--- Tabela de Clientes
-CREATE TABLE IF NOT EXISTS clientes (
-    id BIGSERIAL PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    telefone VARCHAR(14) NOT NULL,
-    endereco VARCHAR(255) NOT NULL,
-    email VARCHAR(255),
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+type Cliente struct {
+	ID           int64     `json:"id"`
+	Nome         string    `json:"nome"`
+	Telefone     string    `json:"telefone"`
+	Endereco     string    `json:"endereco"`
+	Email        string    `json:"email"`
+	CriadoEm     time.Time `json:"criado_em"`
+	AtualizadoEm time.Time `json:"atualizado_em"`
+}
 
-CREATE INDEX idx_clientes_telefone ON clientes(telefone);
-CREATE INDEX idx_clientes_email ON clientes(email);
+type Venda struct {
+	ID            int64     `json:"id"`
+	ProdutoID     int64     `json:"produto_id"`
+	Quantidade    int       `json:"quantidade"`
+	Total         float64   `json:"total"`
+	TipoPagamento string    `json:"tipo_pagamento"`
+	CriadoEm      time.Time `json:"criado_em"`
+}
 
--- Tabela de Vendas
-CREATE TABLE IF NOT EXISTS vendas (
-    id BIGSERIAL PRIMARY KEY,
-    produto_id BIGINT NOT NULL REFERENCES produtos(id),
-    quantidade INT NOT NULL,
-    total DECIMAL(10, 2) NOT NULL,
-    tipo_pagamento VARCHAR(50) NOT NULL,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+type OrdemServico struct {
+	ID           int64     `json:"id"`
+	NumeroOrdem  int64     `json:"numero_ordem"`
+	ClienteID    int64     `json:"cliente_id"`
+	Defeito      string    `json:"defeito"`
+	Servicos     string    `json:"servicos"`
+	Assinatura   string    `json:"assinatura"`
+	Status       string    `json:"status"`
+	CriadoEm     time.Time `json:"criado_em"`
+	AtualizadoEm time.Time `json:"atualizado_em"`
+}
 
-CREATE INDEX idx_vendas_data ON vendas(criado_em);
-CREATE INDEX idx_vendas_produto ON vendas(produto_id);
-
--- Tabela de Ordens de Serviço
-CREATE TABLE IF NOT EXISTS ordens_servico (
-    id BIGSERIAL PRIMARY KEY,
-    numero_ordem BIGINT NOT NULL UNIQUE,
-    cliente_id BIGINT NOT NULL REFERENCES clientes(id),
-    defeito TEXT NOT NULL,
-    servicos TEXT NOT NULL,
-    assinatura TEXT,
-    status VARCHAR(50) DEFAULT 'pendente',
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_ordens_servico_status ON ordens_servico(status);
-CREATE INDEX idx_ordens_servico_data ON ordens_servico(criado_em);
-CREATE INDEX idx_ordens_servico_numero ON ordens_servico(numero_ordem);
-
--- Tabela de Auditoria
-CREATE TABLE IF NOT EXISTS auditoria (
-    id BIGSERIAL PRIMARY KEY,
-    usuario_id BIGINT NOT NULL REFERENCES usuarios(id),
-    acao TEXT NOT NULL,
-    tabela VARCHAR(50),
-    registro_id BIGINT,
-    valores_antigos JSONB,
-    valores_novos JSONB,
-    horario TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_auditoria_usuario ON auditoria(usuario_id);
-CREATE INDEX idx_auditoria_horario ON auditoria(horario);
-CREATE INDEX idx_auditoria_tabela ON auditoria(tabela);
+type Auditoria struct {
+	ID             int64                  `json:"id"`
+	UsuarioID      int64                  `json:"usuario_id"`
+	Acao           string                 `json:"acao"`
+	Tabela         string                 `json:"tabela"`
+	RegistroID     int64                  `json:"registro_id"`
+	ValoresAntigos map[string]interface{} `json:"valores_antigos"`
+	ValoresNovos   map[string]interface{} `json:"valores_novos"`
+	Horario        time.Time              `json:"horario"`
+}

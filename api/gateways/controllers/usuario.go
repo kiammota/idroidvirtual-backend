@@ -1,0 +1,107 @@
+package controllers
+
+import (
+	"net/http"
+	"strconv"
+
+	"backend/models"
+	"backend/services"
+
+	"github.com/gin-gonic/gin"
+)
+
+type UsuarioController struct {
+	UsuarioService *services.UsuarioService
+	LoginService   *services.LoginService
+}
+
+func NewUsuarioController(
+	usuarioService *services.UsuarioService,
+	loginService *services.LoginService,
+) *UsuarioController {
+
+	return &UsuarioController{
+		UsuarioService: usuarioService,
+		LoginService:   loginService,
+	}
+}
+
+// POST /usuarios
+func (c *UsuarioController) CriarUsuario(ctx *gin.Context) {
+
+	var usuario models.Usuario
+
+	if err := ctx.ShouldBindJSON(&usuario); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "dados inválidos",
+		})
+		return
+	}
+
+	err := c.UsuarioService.Criar(&usuario)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{
+		"message": "usuário criado com sucesso",
+		"usuario": usuario,
+	})
+}
+
+func (c *UsuarioController) ObterMeuUsuario(ctx *gin.Context) {
+
+	usuarioID, existe := ctx.Get("usuario_id")
+
+	if !existe {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"message": "usuário não autenticado",
+		})
+		return
+	}
+
+	usuario, err := c.UsuarioService.BuscarPorID(
+		usuarioID.(int64),
+	)
+
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, usuario)
+}
+
+// GET /usuarios/:id
+func (c *UsuarioController) BuscarUsuario(ctx *gin.Context) {
+
+	id, err := strconv.ParseInt(
+		ctx.Param("id"),
+		10,
+		64,
+	)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"message": "id inválido",
+		})
+		return
+	}
+
+	usuario, err := c.UsuarioService.BuscarPorID(id)
+
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, usuario)
+}

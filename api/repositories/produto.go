@@ -1,0 +1,305 @@
+package repositories
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"backend/models"
+)
+
+type ProdutoRepository struct {
+	Pool *pgxpool.Pool
+}
+
+func NewProdutoRepository(pool *pgxpool.Pool) ProdutoRepository {
+	return ProdutoRepository{Pool: pool}
+}
+
+// Criar insere um novo produto no banco de dados e retorna o ID e as datas geradas
+func (r *ProdutoRepository) Criar(ctx context.Context, p *models.Produto) error {
+	query := `
+		INSERT INTO produtos (
+			nome, preco, estoque
+		) VALUES (
+			$1, $2, $3
+		)
+		RETURNING id, criado_em, atualizado_em
+	`
+
+	err := r.Pool.QueryRow(
+		ctx,
+		query,
+		p.Nome,
+		p.Preco,
+		p.Estoque,
+	).Scan(&p.ID, &p.CriadoEm, &p.AtualizadoEm)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// BuscarPorID retorna um produto pelo seu ID
+func (r *ProdutoRepository) BuscarPorID(ctx context.Context, id int64) (*models.Produto, error) {
+	query := `
+		SELECT id, nome, preco, estoque, criado_em, atualizado_em
+		FROM produtos
+		WHERE id = $1
+	`
+
+	var p models.Produto
+	err := r.Pool.QueryRow(ctx, query, id).Scan(
+		&p.ID,
+		&p.Nome,
+		&p.Preco,
+		&p.Estoque,
+		&p.CriadoEm,
+		&p.AtualizadoEm,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil // Retorna nil se o produto não for encontrado
+		}
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+// Listar retorna os produtos com suporte a paginação
+func (r *ProdutoRepository) Listar(ctx context.Context, limit, offset int) ([]models.Produto, error) {
+	query := `
+		SELECT id, nome, preco, estoque, criado_em, atualizado_em
+		FROM produtos
+		ORDER BY nome ASC
+		LIMIT $1 OFFSET $2
+	`
+
+	rows, err := r.Pool.Query(ctx, query, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var produtos []models.Produto
+	for rows.Next() {
+		var p models.Produto
+		err := rows.Scan(
+			&p.ID,
+			&p.Nome,
+			&p.Preco,
+			&p.Estoque,
+			&p.CriadoEm,
+			&p.AtualizadoEm,
+		)
+		if err != nil {
+			return nil, err
+		}
+		produtos = append(produtos, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return produtos, nil
+}
+
+// BuscarPorNome faz uma busca parcial por nome (utilizando ILIKE para ignorar maiúsculas/minúsculas)
+func (r *ProdutoRepository) BuscarPorNome(ctx context.Context, nome string, limit, offset int) ([]models.Produto, error) {
+	query := `
+		SELECT id, nome, preco, estoque, criado_em, atualizado_em
+		FROM produtos
+		WHERE nome ILIKE $1
+		ORDER BY nome ASC
+		LIMIT $2 OFFSET $3
+	`
+
+	termoBusca := fmt.Sprintf("%%%s%%", nome)
+	rows, err := r.Pool.Query(ctx, query, termoBusca, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var produtos []models.Produto
+	for rows.Next() {
+		var p models.Produto
+		err := rows.Scan(
+			&p.ID,
+			&p.Nome,
+			&p.Preco,
+			&p.Estoque,
+			&p.CriadoEm,
+			&p.AtualizadoEm,
+		)
+		if err != nil {
+			return nil, err
+		}
+		produtos = append(produtos, p)
+	}
+
+	return produtos, nil
+}
+
+// Atualizar altera os dados gerais de um produto (nome, preço, estoque)
+func (r *ProdutoRepository) Atualizar(ctx context.Context, p *models.Produto) error {
+	query := `
+		UPDATE produtos
+		SET nome = $1,
+		    preco = $2,
+		    estoque = $3,
+		    atualizado_em = NOW()
+		WHERE id = $4
+		RETURNING atualizado_em
+	`
+
+	err := r.Pool.QueryRow(
+		ctx,
+		query,
+		p.Nome,
+		p.Preco,
+		p.Estoque,
+		p.ID,
+	).Scan(&p.AtualizadoEm)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AtualizarEstoque ajusta apenas a quantidade em estoque (útil ao dar entrada ou baixar itens numa OS)
+// AumentarEstoque incrementa a quantidade do produto no estoque
+func (r *ProdutoRepository) AumentarEstoque(ctx context.Context, id int64, quantidade int) error {
+	if quantidade <= 0 {
+		return errors.New("a quantidade a ser adicionada deve ser maior que zero")
+	}
+
+	query := `
+		UPDATE produtos
+		SET estoque = estoque + $1,
+		    atualizado_em = NOW()
+		WHERE id = $2
+	`
+
+	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return errors.New("nenhum produto encontrado para aumentar o estoque")
+	}
+
+	return nil
+}
+
+// AumentarEstoqueTx incrementa a quantidade do produto no estoque dentro de uma transação (pgx.Tx)
+func (r *ProdutoRepository) AumentarEstoqueTx(ctx context.Context, tx pgx.Tx, id int64, quantidade int) error {
+	if quantidade <= 0 {
+		return errors.New("a quantidade a ser adicionada deve ser maior que zero")
+	}
+
+	query := `
+		UPDATE produtos
+		SET estoque = estoque + $1,
+		    atualizado_em = NOW()
+		WHERE id = $2
+	`
+
+	cmdTag, err := tx.Exec(ctx, query, quantidade, id)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return errors.New("nenhum produto encontrado para aumentar o estoque")
+	}
+
+	return nil
+}
+
+// DiminuirEstoque decremanta a quantidade do produto, garantindo que o estoque não fique negativo
+func (r *ProdutoRepository) DiminuirEstoque(ctx context.Context, id int64, quantidade int) error {
+	if quantidade <= 0 {
+		return errors.New("a quantidade a ser removida deve ser maior que zero")
+	}
+
+	query := `
+		UPDATE produtos
+		SET estoque = estoque - $1,
+		    atualizado_em = NOW()
+		WHERE id = $2 AND estoque >= $1
+	`
+
+	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		// Se nenhuma linha foi afetada, pode ser que o ID não exista ou o estoque seja insuficiente
+		produto, errBuscar := r.BuscarPorID(ctx, id)
+		if errBuscar != nil || produto == nil {
+			return errors.New("nenhum produto encontrado para diminuir o estoque")
+		}
+		return errors.New("estoque insuficiente para realizar a baixa")
+	}
+
+	return nil
+}
+
+// DiminuirEstoqueTx diminui a quantidade de estoque dentro de uma transação ativa
+func (r *ProdutoRepository) DiminuirEstoqueTx(ctx context.Context, tx pgx.Tx, id int64, quantidade int) error {
+	if quantidade <= 0 {
+		return errors.New("a quantidade a ser removida deve ser maior que zero")
+	}
+
+	query := `
+		UPDATE produtos
+		SET estoque = estoque - $1,
+		    atualizado_em = NOW()
+		WHERE id = $2 AND estoque >= $1
+	`
+
+	cmdTag, err := tx.Exec(ctx, query, quantidade, id)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		// Busca para identificar se o problema foi falta de estoque ou produto inexistente
+		var existe bool
+		errExiste := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM produtos WHERE id = $1)", id).Scan(&existe)
+		if errExiste != nil || !existe {
+			return errors.New("nenhum produto encontrado para diminuir o estoque")
+		}
+		return errors.New("estoque insuficiente para realizar a baixa")
+	}
+
+	return nil
+}
+
+func (r *ProdutoRepository) Deletar(ctx context.Context, id int64) error {
+	query := `DELETE FROM produtos WHERE id = $1`
+
+	cmdTag, err := r.Pool.Exec(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return errors.New("nenhum produto encontrado para deletar")
+	}
+
+	return nil
+}
