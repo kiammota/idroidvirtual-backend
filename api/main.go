@@ -42,7 +42,7 @@ func main() {
 	public.Use(middlewares.CORSMiddleware())
 	public.Use(middlewares.JsonOnlyMiddleware())
 	public.Use(middlewares.JsonNotEmptyMiddleware())
-	public.Use(middlewares.LogMiddleware())
+	// public.Use(middlewares.LogMiddleware())
 
 	// 6. Rotas Públicas
 	public.GET("/", func(ctx *gin.Context) { ctx.JSON(200, "pong!") })
