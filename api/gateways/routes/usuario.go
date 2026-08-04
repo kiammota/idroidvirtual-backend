@@ -10,7 +10,7 @@ func UsuarioRoutes(
 	router *gin.RouterGroup,
 	usuarioController *controllers.UsuarioController,
 ) {
-	basePath := "/usuarios"
+	basePath := "/users"
 
 	router.POST(
 		basePath,

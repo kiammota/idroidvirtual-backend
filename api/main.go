@@ -38,31 +38,32 @@ func main() {
 	authController := controllers.NewAuthController(loginService, auditoriaRepo)
 
 	// 5. Servidor HTTP e Middlewares Globais
-	public := gin.Default()
-	public.Use(middlewares.CORSMiddleware())
-	public.Use(middlewares.JsonOnlyMiddleware())
-	public.Use(middlewares.JsonNotEmptyMiddleware())
+	engine := gin.Default()
+	engine.Use(middlewares.CORSMiddleware())
+	engine.Use(middlewares.JsonOnlyMiddleware())
+	engine.Use(middlewares.JsonNotEmptyMiddleware())
 	// public.Use(middlewares.LogMiddleware())
 
 	// 6. Rotas Públicas
-	public.GET("/", func(ctx *gin.Context) { ctx.JSON(200, "pong!") })
-	public.POST("login", func(ctx *gin.Context) { authController.UsuarioLogar(ctx) })
+	engine.GET("/", func(ctx *gin.Context) { ctx.JSON(200, "pong!") })
+	engine.POST("login", func(ctx *gin.Context) { authController.UsuarioLogar(ctx) })
 
-	api := public.Group("")
-	private := public.Group("")
-	
+	public := engine.Group("")
+	private := engine.Group("")
+
+	engine.Static("/swagger", "./swagger")
+
 	private.Use(middlewares.AuthJWT())
-	private.GET("me", func(ctx *gin.Context) { usuarioController.ObterMeuUsuario(ctx) })
-	routes.AuthRoutes(api, authController)
-	routes.UsuarioRoutes(private, usuarioController)
+	routes.AuthRoutes(public, authController)
+	routes.UsuarioRoutes(public, usuarioController)
 	routes.VendaRoutes(private, vendaController)
 
 	// 7. Rotas Privadas (Autenticadas)
 
-
 	// 8. Inicialização do Servidor
+	println("rodando com swagger!")
 	log.Printf("Servidor rodando na porta %s", cfg.Porta)
-	if err := public.Run("0.0.0.0:" + cfg.Porta); err != nil {
+	if err := engine.Run("0.0.0.0:" + cfg.Porta); err != nil {
 		log.Fatalf("Falha ao subir servidor: %v", err)
 	}
 }

@@ -13,6 +13,5 @@ func AuthRoutes(
 	auth := router.Group("/auth")
 	{
 		auth.POST("/login", authController.UsuarioLogar)
-		auth.POST("/elevate", authController.UsuarioSenha)
 	}
 }

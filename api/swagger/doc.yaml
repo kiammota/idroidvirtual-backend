@@ -8,7 +8,7 @@ info:
     filtrada pela categoria informada na rota.
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:7192
     description: Ambiente local
 
 security:
@@ -106,6 +106,127 @@ paths:
                 data: null
                 success: false
                 message: "Senha administrativa inválida"
+
+  /users:
+    post:
+      tags: [Users]
+      operationId: createUser
+      security:
+        - bearerAuth: []
+      summary: Cria um novo usuário
+      description: |
+        Cria um usuário no sistema.
+        Os dados são enviados no corpo da requisição.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+            examples:
+              exemplo:
+                value:
+                  nome: João Silva
+                  email: usuario@email.com
+                  senha: 123456
+      responses:
+        '201':
+          description: Usuário criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+              example:
+                data:
+                  id: 1
+                  nome: João Silva
+                  email: usuario@email.com
+                success: true
+                message: "Usuário criado com sucesso"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      operationId: getUserById
+      security:
+        - bearerAuth: []
+      summary: Busca usuário por ID
+      description: |
+        Retorna os dados de um usuário específico através do identificador.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador do usuário
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Usuário encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+              example:
+                data:
+                  id: 1
+                  nome: João Silva
+                  email: usuario@email.com
+                success: true
+                message: "Usuário encontrado"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+
+  /users/elevate:
+    post:
+      tags: [Users]
+      operationId: elevateUser
+      security:
+        - bearerAuth: []
+      summary: Valida senha administrativa do usuário
+      description: |
+        Solicita a senha administrativa do usuário autenticado
+        para liberar operações sensíveis durante a sessão atual.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ElevateUserRequest'
+            examples:
+              exemplo:
+                value:
+                  senha: "123456"
+      responses:
+        '200':
+          description: Senha administrativa validada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+              example:
+                data: null
+                success: true
+                message: "Senha administrativa validada"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /clients/:
     post:
@@ -925,6 +1046,8 @@ components:
           format: date-time
           readOnly: true
 
+          
+
     ClienteCreate:
       type: object
       additionalProperties: false
@@ -946,6 +1069,11 @@ components:
           nullable: true
           format: email
           example: joao@gmail.com
+
+    ElevateUserRequest:
+      type: string
+      format: password
+      example: "123456"
 
     Produto:
       type: object
@@ -1146,6 +1274,30 @@ components:
           format: date-time
           readOnly: true
 
+    CreateUserRequest:
+      type: object
+      required:
+        - empresa_id
+        - email
+        - nome
+        - senha_hash
+      properties:
+        empresa_id:
+          type: integer
+          example: 1
+
+        email:
+          type: string
+          example: usuario@email.com
+
+        nome:
+          type: string
+          example: João
+
+        senha_hash:
+          type: string
+          example: "123456"
+
     OrdemServicoCreate:
       type: object
       additionalProperties: false
@@ -1194,3 +1346,5 @@ components:
         status:
           type: string
           example: EM_ANDAMENTO
+
+

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"backend/gateways"
 	"backend/models"
 	"backend/services"
 
@@ -32,25 +33,23 @@ func (c *UsuarioController) CriarUsuario(ctx *gin.Context) {
 	var usuario models.Usuario
 
 	if err := ctx.ShouldBindJSON(&usuario); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": "dados inválidos",
-		})
+		gateways.Error(ctx, http.StatusBadRequest, "dados inválidos")
 		return
 	}
 
 	err := c.UsuarioService.Criar(&usuario)
 
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		gateways.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{
-		"message": "usuário criado com sucesso",
-		"usuario": usuario,
-	})
+	gateways.Success(
+		ctx,
+		http.StatusCreated,
+		usuario,
+		"usuário criado com sucesso",
+	)
 }
 
 func (c *UsuarioController) ObterMeuUsuario(ctx *gin.Context) {

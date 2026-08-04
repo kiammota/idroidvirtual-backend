@@ -77,5 +77,3 @@ func (c *AuthController) UsuarioLogar(ctx *gin.Context) {
 		response,
 	)
 }
-
-
