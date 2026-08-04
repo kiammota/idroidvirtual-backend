@@ -241,7 +241,7 @@ paths:
       description: >
         Retorna todos os produtos filtrados pela categoria informada na rota.
       parameters:
-        - name: categoria
+        - name: category
           in: path
           required: true
           schema:
