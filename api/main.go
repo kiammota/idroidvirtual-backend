@@ -50,6 +50,7 @@ func main() {
 
 	api := public.Group("")
 	routes.UsuarioRoutes(api, usuarioController)
+	routes.AuthRoutes(api, authController)
 	routes.VendaRoutes(api, vendaController)
 
 	// 7. Rotas Privadas (Autenticadas)
