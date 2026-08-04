@@ -73,6 +73,41 @@ func (r *ProdutoRepository) BuscarPorID(ctx context.Context, id int64) (*models.
 	return &p, nil
 }
 
+func (r *ProdutoRepository) BuscarPorIDTx(
+	ctx context.Context,
+	tx pgx.Tx,
+	id int64,
+) (*models.Produto, error) {
+
+	query := `
+		SELECT id, nome, preco, estoque, criado_em, atualizado_em
+			FROM produtos
+		WHERE id = $1
+		FOR UPDATE
+	`
+
+	var p models.Produto
+
+	err := tx.QueryRow(ctx, query, id).Scan(
+		&p.ID,
+		&p.Nome,
+		&p.Preco,
+		&p.Estoque,
+		&p.CriadoEm,
+		&p.AtualizadoEm,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &p, nil
+}
+
 // Listar retorna os produtos com suporte a paginação
 func (r *ProdutoRepository) Listar(ctx context.Context, limit, offset int) ([]models.Produto, error) {
 	query := `
