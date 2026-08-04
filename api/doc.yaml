@@ -233,7 +233,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /products/{categoria}:
+  /products/category/{category}:
     get:
       tags: [Products]
       operationId: listProductsByCategory
