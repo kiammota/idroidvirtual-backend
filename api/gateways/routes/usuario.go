@@ -21,4 +21,9 @@ func UsuarioRoutes(
 		usuarioController.BuscarUsuario,
 	)
 
+	router.POST(
+		"/usuarios/elevate", 
+		usuarioController.UsuarioSenha
+	)
+
 }
