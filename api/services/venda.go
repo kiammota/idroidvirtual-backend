@@ -45,7 +45,13 @@ func (s *VendaService) ExecutarVenda(
 		return nil, errors.New("a quantidade deve ser maior que zero")
 	}
 
-	produto, err := s.produtoRepo.BuscarPorID(ctx, produtoID)
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao iniciar transação: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	produto, err := s.produtoRepo.BuscarPorIDTx(ctx, tx, produtoID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar produto: %w", err)
 	}
@@ -54,23 +60,19 @@ func (s *VendaService) ExecutarVenda(
 	}
 
 	if produto.Estoque < quantidade {
-		return nil, fmt.Errorf("estoque insuficiente (disponível: %d, solicitado: %d)", produto.Estoque, quantidade)
+		return nil, fmt.Errorf(
+			"estoque insuficiente (disponível: %d, solicitado: %d)",
+			produto.Estoque,
+			quantidade,
+		)
 	}
 
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao iniciar transação: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
-	// 1. Baixa no Estoque
-	err = s.produtoRepo.DiminuirEstoqueTx(ctx, tx, produtoID, quantidade)
-	if err != nil {
+	if err := s.produtoRepo.DiminuirEstoqueTx(ctx, tx, produtoID, quantidade); err != nil {
 		return nil, fmt.Errorf("falha ao dar baixa no estoque: %w", err)
 	}
 
-	// 2. Registra a Venda
 	valorTotal := produto.Preco * float64(quantidade)
+
 	venda := &models.Venda{
 		ProdutoID:     produtoID,
 		UsuarioID:     usuarioID,
@@ -80,14 +82,22 @@ func (s *VendaService) ExecutarVenda(
 		Status:        "CONCLUIDA",
 	}
 
-	err = s.vendaRepo.CriarTx(ctx, tx, venda)
-	if err != nil {
+	if err := s.vendaRepo.CriarTx(ctx, tx, venda); err != nil {
 		return nil, fmt.Errorf("falha ao registrar venda: %w", err)
 	}
 
-	if err != nil {
-		return nil, fmt.Errorf("falha ao gravar auditoria: %w", err)
-	}
+	// Se você tiver um model de auditoria, registre aqui.
+	// Exemplo:
+	//
+	// auditoria := &models.Auditoria{
+	// 	UsuarioID: usuarioID,
+	// 	Acao:      "VENDA_CRIADA",
+	// 	Detalhes:  fmt.Sprintf("Venda do produto %d, quantidade %d", produtoID, quantidade),
+	// }
+	//
+	// if err := s.auditRepo.CriarTx(ctx, tx, auditoria); err != nil {
+	// 	return nil, fmt.Errorf("falha ao gravar auditoria: %w", err)
+	// }
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("erro ao efetivar transação: %w", err)
