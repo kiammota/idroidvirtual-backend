@@ -49,14 +49,16 @@ func main() {
 	public.POST("login", func(ctx *gin.Context) { authController.UsuarioLogar(ctx) })
 
 	api := public.Group("")
-	routes.UsuarioRoutes(api, usuarioController)
-	routes.AuthRoutes(api, authController)
-	routes.VendaRoutes(api, vendaController)
-
-	// 7. Rotas Privadas (Autenticadas)
-	private := public.Group("/api")
+	private := public.Group("")
+	
 	private.Use(middlewares.AuthJWT())
 	private.GET("me", func(ctx *gin.Context) { usuarioController.ObterMeuUsuario(ctx) })
+	routes.AuthRoutes(api, authController)
+	routes.UsuarioRoutes(private, usuarioController)
+	routes.VendaRoutes(private, vendaController)
+
+	// 7. Rotas Privadas (Autenticadas)
+
 
 	// 8. Inicialização do Servidor
 	log.Printf("Servidor rodando na porta %s", cfg.Porta)
