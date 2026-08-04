@@ -1,0 +1,1151 @@
+openapi: 3.1.0
+info:
+  title: API REST
+  version: 1.0.0
+  description: >
+    Documentação OpenAPI 3.1 gerada a partir das rotas e structs em Go fornecidas.
+    Considerei o endpoint GET /products/{categoria} como uma listagem de produtos
+    filtrada pela categoria informada na rota.
+
+servers:
+  - url: http://localhost:8080
+    description: Ambiente local
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Auth
+  - name: Clients
+  - name: Products
+  - name: Sales
+  - name: Closing
+  - name: ServiceOrders
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      security: []
+      summary: Autentica um usuário e retorna o token JWT
+      description: >
+        Recebe login e senha. Conforme sua última confirmação, esta rota retorna
+        apenas o token JWT em texto puro.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              exemplo:
+                value:
+                  login: usuario@email.com
+                  senha: 123456
+      responses:
+        '200':
+          description: Token JWT gerado com sucesso
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            application/json:
+              schema:
+                type: string
+                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /clients/:
+    post:
+      tags: [Clients]
+      operationId: createClient
+      summary: Cria um cliente
+      description: Cria um novo cliente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClienteCreate'
+      responses:
+        '201':
+          $ref: '#/components/responses/ClientEnvelopeCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      tags: [Clients]
+      operationId: listClients
+      summary: Lista clientes
+      description: Retorna todos os clientes cadastrados.
+      responses:
+        '200':
+          $ref: '#/components/responses/ClientListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /clients/{id}:
+    get:
+      tags: [Clients]
+      operationId: getClientById
+      summary: Busca cliente por ID
+      description: Retorna um cliente pelo identificador numérico.
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      responses:
+        '200':
+          $ref: '#/components/responses/ClientEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /clients/number:
+    get:
+      tags: [Clients]
+      operationId: searchClientsByPhone
+      summary: Busca clientes por telefone
+      description: Filtra clientes pelo telefone informado em query string.
+      parameters:
+        - name: telefone
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "75999999999"
+      responses:
+        '200':
+          $ref: '#/components/responses/ClientListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /clients/address:
+    get:
+      tags: [Clients]
+      operationId: searchClientsByAddress
+      summary: Busca clientes por endereço
+      description: Filtra clientes pelo endereço informado em query string.
+      parameters:
+        - name: endereco
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "Rua A, 123"
+      responses:
+        '200':
+          $ref: '#/components/responses/ClientListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /clients/name:
+    get:
+      tags: [Clients]
+      operationId: searchClientsByName
+      summary: Busca clientes por nome
+      description: Filtra clientes pelo nome informado em query string.
+      parameters:
+        - name: nome
+          in: query
+          required: true
+          schema:
+            type: string
+          example: João
+      responses:
+        '200':
+          $ref: '#/components/responses/ClientListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /clients/email:
+    get:
+      tags: [Clients]
+      operationId: searchClientsByEmail
+      summary: Busca clientes por email
+      description: Filtra clientes pelo email informado em query string.
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+            format: email
+          example: joao@gmail.com
+      responses:
+        '200':
+          $ref: '#/components/responses/ClientListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /products:
+    get:
+      tags: [Products]
+      operationId: listProducts
+      summary: Lista produtos
+      description: Retorna todos os produtos cadastrados.
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [Products]
+      operationId: createProduct
+      summary: Cria um produto
+      description: Cria um novo produto.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProdutoCreate'
+      responses:
+        '201':
+          $ref: '#/components/responses/ProductEnvelopeCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /products/{categoria}:
+    get:
+      tags: [Products]
+      operationId: listProductsByCategory
+      summary: Lista produtos por categoria
+      description: >
+        Retorna todos os produtos filtrados pela categoria informada na rota.
+      parameters:
+        - name: categoria
+          in: path
+          required: true
+          schema:
+            type: string
+          example: CELULAR
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /products/{id}:
+    post:
+      tags: [Products]
+      operationId: updateProduct
+      summary: Atualiza um produto completo
+      description: >
+        Atualiza um produto existente com os campos mutáveis completos.
+      parameters:
+        - $ref: '#/components/parameters/ProductIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProdutoCreate'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [Products]
+      operationId: deleteProduct
+      summary: Remove um produto
+      parameters:
+        - $ref: '#/components/parameters/ProductIdPath'
+      responses:
+        '200':
+          $ref: '#/components/responses/EmptyEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /sales:
+    post:
+      tags: [Sales]
+      operationId: createSale
+      summary: Registra uma venda
+      description: >
+        Cria uma venda. O total, o ID e a data de criação são calculados pela API.
+        O frontend pode buscar cliente e produto antes e enviar seus IDs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendaCreate'
+      responses:
+        '201':
+          $ref: '#/components/responses/SaleEnvelopeCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /sales/{id}:
+    delete:
+      tags: [Sales]
+      operationId: deleteSale
+      summary: Cancela ou remove uma venda pelo ID
+      parameters:
+        - $ref: '#/components/parameters/SaleIdPath'
+      responses:
+        '200':
+          $ref: '#/components/responses/EmptyEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /sales/dia:
+    get:
+      tags: [Sales]
+      operationId: listSalesByDay
+      summary: Vendas do dia
+      description: Retorna o resultado diário de vendas. O formato exato do data não foi especificado.
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /sales/mes:
+    get:
+      tags: [Sales]
+      operationId: listSalesByMonth
+      summary: Vendas do mês
+      description: Retorna o resultado mensal de vendas. O formato exato do data não foi especificado.
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /closing/dia:
+    get:
+      tags: [Closing]
+      operationId: closingByDay
+      summary: Fechamento do dia
+      description: Retorna o fechamento diário. O formato exato do data não foi especificado.
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /closing/mes:
+    get:
+      tags: [Closing]
+      operationId: closingByMonth
+      summary: Fechamento do mês
+      description: Retorna o fechamento mensal. O formato exato do data não foi especificado.
+      responses:
+        '200':
+          $ref: '#/components/responses/GenericEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders:
+    post:
+      tags: [ServiceOrders]
+      operationId: createServiceOrder
+      summary: Cria uma ordem de serviço
+      description: >
+        Cria uma ordem de serviço. Os campos id, numero_ordem, criado_em e atualizado_em
+        são preenchidos pela API.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrdemServicoCreate'
+      responses:
+        '201':
+          $ref: '#/components/responses/ServiceOrderEnvelopeCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      tags: [ServiceOrders]
+      operationId: listServiceOrders
+      summary: Lista ordens de serviço
+      description: Retorna todas as ordens de serviço.
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders/{id}:
+    get:
+      tags: [ServiceOrders]
+      operationId: getServiceOrderById
+      summary: Busca ordem de serviço por ID
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderIdPath'
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      tags: [ServiceOrders]
+      operationId: patchServiceOrder
+      summary: Atualiza parcialmente uma ordem de serviço
+      description: Atualiza apenas os campos enviados no corpo.
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrdemServicoUpdate'
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [ServiceOrders]
+      operationId: deleteServiceOrder
+      summary: Remove uma ordem de serviço
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderIdPath'
+      responses:
+        '200':
+          $ref: '#/components/responses/EmptyEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders/client-id/{cliente_id}:
+    get:
+      tags: [ServiceOrders]
+      operationId: listServiceOrdersByClientId
+      summary: Lista ordens por cliente ID
+      parameters:
+        - $ref: '#/components/parameters/ClienteIdPath'
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders/client-name/{client_name}:
+    get:
+      tags: [ServiceOrders]
+      operationId: listServiceOrdersByClientName
+      summary: Lista ordens por nome do cliente
+      parameters:
+        - $ref: '#/components/parameters/ClientNamePath'
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders/client-email/{client_email}:
+    get:
+      tags: [ServiceOrders]
+      operationId: listServiceOrdersByClientEmail
+      summary: Lista ordens por email do cliente
+      parameters:
+        - $ref: '#/components/parameters/ClientEmailPath'
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders/client-number/{client_number}:
+    get:
+      tags: [ServiceOrders]
+      operationId: listServiceOrdersByClientNumber
+      summary: Lista ordens por número do cliente
+      parameters:
+        - $ref: '#/components/parameters/ClientNumberPath'
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders/three-months:
+    get:
+      tags: [ServiceOrders]
+      operationId: listServiceOrdersLastThreeMonths
+      summary: Ordens dos últimos três meses
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders/six-months:
+    get:
+      tags: [ServiceOrders]
+      operationId: listServiceOrdersLastSixMonths
+      summary: Ordens dos últimos seis meses
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ClientIdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+    ProductIdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+    SaleIdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+    ServiceOrderIdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+    ClienteIdPath:
+      name: cliente_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1
+    ClientNamePath:
+      name: client_name
+      in: path
+      required: true
+      schema:
+        type: string
+      example: João
+    ClientEmailPath:
+      name: client_email
+      in: path
+      required: true
+      schema:
+        type: string
+        format: email
+      example: joao@gmail.com
+    ClientNumberPath:
+      name: client_number
+      in: path
+      required: true
+      schema:
+        type: string
+      example: "75999999999"
+
+  responses:
+    BadRequest:
+      description: Requisição inválida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/responses/GenericEnvelope'
+    Unauthorized:
+      description: Não autenticado ou token inválido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/responses/GenericEnvelope'
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/responses/GenericEnvelope'
+    InternalError:
+      description: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/responses/GenericEnvelope'
+    EmptyEnvelope:
+      description: Operação concluída
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/responses/GenericEnvelope'
+    GenericEnvelope:
+      description: Resposta padronizada sem tipagem específica do campo data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiEnvelope'
+    ClientEnvelope:
+      description: Resposta com um cliente
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiEnvelope'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cliente'
+    ClientListEnvelope:
+      description: Resposta com uma lista de clientes
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiEnvelope'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Cliente'
+    ClientEnvelopeCreated:
+      description: Cliente criado com sucesso
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiEnvelope'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Cliente'
+    ProductEnvelope:
+      description: Resposta com um produto
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiEnvelope'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Produto'
+    ProductListEnvelope:
+      description: Resposta com uma lista de produtos
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiEnvelope'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Produto'
+    ProductEnvelopeCreated:
+      description: Produto criado com sucesso
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiEnvelope'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Produto'
+    SaleEnvelope:
+      description: Resposta com uma venda
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiEnvelope'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Venda'
+    SaleEnvelopeCreated:
+      description: Venda criada com sucesso
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiEnvelope'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Venda'
+    ServiceOrderEnvelope:
+      description: Resposta com uma ordem de serviço
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiEnvelope'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/OrdemServico'
+    ServiceOrderEnvelopeCreated:
+      description: Ordem de serviço criada com sucesso
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiEnvelope'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/OrdemServico'
+    ServiceOrderListEnvelope:
+      description: Resposta com uma lista de ordens de serviço
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ApiEnvelope'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrdemServico'
+
+  schemas:
+    ApiEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data, success, message]
+      properties:
+        data:
+          description: Payload da resposta.
+          oneOf:
+            - type: object
+            - type: array
+              items: {}
+            - type: string
+            - type: number
+            - type: integer
+            - type: boolean
+            - type: 'null'
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: ""
+
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [login, senha]
+      properties:
+        login:
+          type: string
+          example: usuario@email.com
+        senha:
+          type: string
+          format: password
+          example: "123456"
+
+    Cliente:
+      type: object
+      additionalProperties: false
+      required: [id, nome, criado_em, atualizado_em]
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 1
+        nome:
+          type: string
+          example: João da Silva
+        telefone:
+          type: [string, 'null']
+          nullable: true
+          example: "75999999999"
+        endereco:
+          type: [string, 'null']
+          nullable: true
+          example: "Rua A, 123"
+        email:
+          type: [string, 'null']
+          nullable: true
+          format: email
+          example: joao@gmail.com
+        criado_em:
+          type: string
+          format: date-time
+          readOnly: true
+        atualizado_em:
+          type: string
+          format: date-time
+          readOnly: true
+
+    ClienteCreate:
+      type: object
+      additionalProperties: false
+      required: [nome]
+      properties:
+        nome:
+          type: string
+          example: João da Silva
+        telefone:
+          type: [string, 'null']
+          nullable: true
+          example: "75999999999"
+        endereco:
+          type: [string, 'null']
+          nullable: true
+          example: "Rua A, 123"
+        email:
+          type: [string, 'null']
+          nullable: true
+          format: email
+          example: joao@gmail.com
+
+    Produto:
+      type: object
+      additionalProperties: false
+      required: [id, nome, preco, estoque, categoria, criado_em, atualizado_em]
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 1
+        nome:
+          type: string
+          example: iPhone 14
+        preco:
+          type: number
+          format: double
+          example: 4999.9
+        estoque:
+          type: integer
+          example: 10
+        categoria:
+          type: string
+          description: >
+            Categoria livre definida pela aplicação. Categorias padrão comuns:
+            CELULAR, ACESSORIO, CAPA, CARREGADOR, ELETRODOMESTICO.
+          example: CELULAR
+        criado_em:
+          type: string
+          format: date-time
+          readOnly: true
+        atualizado_em:
+          type: string
+          format: date-time
+          readOnly: true
+
+    ProdutoCreate:
+      type: object
+      additionalProperties: false
+      required: [nome, preco, estoque, categoria]
+      properties:
+        nome:
+          type: string
+          example: iPhone 14
+        preco:
+          type: number
+          format: double
+          example: 4999.9
+        estoque:
+          type: integer
+          example: 10
+        categoria:
+          type: string
+          example: CELULAR
+
+    Usuario:
+      type: object
+      additionalProperties: false
+      required: [id, empresa_id, email, nome, senha_hash, criado_em]
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 1
+        empresa_id:
+          type: integer
+          format: int64
+          example: 1
+        email:
+          type: string
+          format: email
+          example: usuario@email.com
+        nome:
+          type: string
+          example: Maria
+        senha_hash:
+          type: string
+          writeOnly: true
+          example: "$2a$10$..."
+        criado_em:
+          type: string
+          format: date-time
+          readOnly: true
+
+    Venda:
+      type: object
+      additionalProperties: false
+      required: [id, produto_id, usuario_id, cliente_id, quantidade, total, tipo_pagamento, status, criado_em]
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 1
+        produto_id:
+          type: integer
+          format: int64
+          example: 10
+        usuario_id:
+          type: integer
+          format: int64
+          example: 3
+        cliente_id:
+          type: integer
+          format: int64
+          example: 7
+        quantidade:
+          type: integer
+          example: 2
+        total:
+          type: number
+          format: double
+          readOnly: true
+          example: 1999.98
+        tipo_pagamento:
+          type: string
+          enum: [PIX, CARTAO, DINHEIRO, TRANSFERENCIA]
+          example: PIX
+        status:
+          type: string
+          enum: [CONCLUIDA, CANCELADA]
+          example: CONCLUIDA
+        criado_em:
+          type: string
+          format: date-time
+          readOnly: true
+
+    VendaCreate:
+      type: object
+      additionalProperties: false
+      required: [produto_id, usuario_id, cliente_id, quantidade, tipo_pagamento, status]
+      properties:
+        produto_id:
+          type: integer
+          format: int64
+          example: 10
+        usuario_id:
+          type: integer
+          format: int64
+          example: 3
+        cliente_id:
+          type: integer
+          format: int64
+          example: 7
+        quantidade:
+          type: integer
+          example: 2
+        tipo_pagamento:
+          type: string
+          enum: [PIX, CARTAO, DINHEIRO, TRANSFERENCIA]
+          example: PIX
+        status:
+          type: string
+          enum: [CONCLUIDA, CANCELADA]
+          example: CONCLUIDA
+
+    OrdemServico:
+      type: object
+      additionalProperties: false
+      required: [id, numero_ordem, cliente_id, status, criado_em, atualizado_em]
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 1
+        numero_ordem:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 10001
+        cliente_id:
+          type: integer
+          format: int64
+          example: 7
+        defeito:
+          type: [string, 'null']
+          nullable: true
+          example: "Tela quebrada"
+        servicos:
+          type: [string, 'null']
+          nullable: true
+          example: "Troca de display"
+        assinatura:
+          type: [string, 'null']
+          nullable: true
+          example: "Nome do cliente ou confirmação digitalizada"
+        status:
+          type: string
+          example: ABERTA
+        criado_em:
+          type: string
+          format: date-time
+          readOnly: true
+        atualizado_em:
+          type: string
+          format: date-time
+          readOnly: true
+
+    OrdemServicoCreate:
+      type: object
+      additionalProperties: false
+      required: [cliente_id, status]
+      properties:
+        cliente_id:
+          type: integer
+          format: int64
+          example: 7
+        defeito:
+          type: [string, 'null']
+          nullable: true
+          example: "Tela quebrada"
+        servicos:
+          type: [string, 'null']
+          nullable: true
+          example: "Troca de display"
+        assinatura:
+          type: [string, 'null']
+          nullable: true
+          example: "Nome do cliente ou confirmação digitalizada"
+        status:
+          type: string
+          example: ABERTA
+
+    OrdemServicoUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        cliente_id:
+          type: integer
+          format: int64
+          example: 7
+        defeito:
+          type: [string, 'null']
+          nullable: true
+          example: "Tela quebrada"
+        servicos:
+          type: [string, 'null']
+          nullable: true
+          example: "Troca de display"
+        assinatura:
+          type: [string, 'null']
+          nullable: true
+          example: "Nome do cliente ou confirmação digitalizada"
+        status:
+          type: string
+          example: EM_ANDAMENTO
