@@ -10,20 +10,20 @@ func UsuarioRoutes(
 	router *gin.RouterGroup,
 	usuarioController *controllers.UsuarioController,
 ) {
+	basePath := "/usuarios"
 
 	router.POST(
-		"/usuarios",
+		basePath,
 		usuarioController.CriarUsuario,
 	)
 
 	router.GET(
-		"/usuarios/:id",
+		basePath+"/:id",
 		usuarioController.BuscarUsuario,
 	)
 
 	router.POST(
-		"/usuarios/elevate", 
-		usuarioController.UsuarioSenha
+		basePath+"/elevate",
+		usuarioController.UsuarioSenha,
 	)
-
 }
