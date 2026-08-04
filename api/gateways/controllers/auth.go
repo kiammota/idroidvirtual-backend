@@ -78,20 +78,4 @@ func (c *AuthController) UsuarioLogar(ctx *gin.Context) {
 	)
 }
 
-func (c *AuthController) UsuarioSenha(ctx *gin.Context) {
-	var body struct {
-		Senha string `json:"senha" binding:"required"`
-	}
 
-	if err := ctx.ShouldBindJSON(&body); err != nil {
-		gateways.Error(ctx, http.StatusBadRequest, "Senha obrigatória")
-		return
-	}
-
-	if body.Senha != "1123" {
-		gateways.Error(ctx, http.StatusUnauthorized, "Senha administrativa inválida")
-		return
-	}
-
-	gateways.Success(ctx, http.StatusOK, nil, "Senha administrativa validada")
-}
