@@ -62,6 +62,51 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /auth/elevate:
+    post:
+      tags: [Auth]
+      operationId: authElevate
+      security:
+        - bearerAuth: []
+      summary: Valida senha administrativa para acessar recursos protegidos
+      description: |
+        Solicita a senha administrativa do usuário autenticado para liberar
+        operações sensíveis durante a sessão atual.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - senha
+              properties:
+                senha:
+                  type: string
+                  format: password
+                  example: "12345"
+      responses:
+        '200':
+          description: Senha administrativa validada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+              example:
+                data: null
+                success: true
+                message: "Senha administrativa validada"
+        '401':
+          description: Senha administrativa inválida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+              example:
+                data: null
+                success: false
+                message: "Senha administrativa inválida"
+
   /clients/:
     post:
       tags: [Clients]
@@ -649,31 +694,31 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/responses/GenericEnvelope'
+            $ref: '#/components/schemas/ApiEnvelope'
     Unauthorized:
       description: Não autenticado ou token inválido
       content:
         application/json:
           schema:
-            $ref: '#/components/responses/GenericEnvelope'
+            $ref: '#/components/schemas/ApiEnvelope'
     NotFound:
       description: Recurso não encontrado
       content:
         application/json:
           schema:
-            $ref: '#/components/responses/GenericEnvelope'
+            $ref: '#/components/schemas/ApiEnvelope'
     InternalError:
       description: Erro interno do servidor
       content:
         application/json:
           schema:
-            $ref: '#/components/responses/GenericEnvelope'
+            $ref: '#/components/schemas/ApiEnvelope'
     EmptyEnvelope:
       description: Operação concluída
       content:
         application/json:
           schema:
-            $ref: '#/components/responses/GenericEnvelope'
+            $ref: '#/components/schemas/ApiEnvelope'
     GenericEnvelope:
       description: Resposta padronizada sem tipagem específica do campo data
       content:
