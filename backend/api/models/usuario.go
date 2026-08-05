@@ -7,6 +7,6 @@ type Usuario struct {
 	EmpresaID int64     `json:"empresa_id"`
 	Email     string    `json:"email"`
 	Nome      string    `json:"nome"`
-	SenhaHash string    `json:"senha_hash"`
+	Senha     string    `json:"senha"`
 	CriadoEm  time.Time `json:"criado_em"`
 }

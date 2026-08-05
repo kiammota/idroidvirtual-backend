@@ -1,9 +1,9 @@
 package main
 
 import (
+	"backend/logger"
 	"context"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,16 +17,28 @@ type Config struct {
 }
 
 func init() {
-	_ = godotenv.Load()
+	logger.Log("Inicializando aplicação...")
+
+	err := godotenv.Load()
+	if err != nil {
+		logger.Warn("Arquivo .env padrão não encontrado, continuando...")
+		return
+	}
+
+	logger.OK("Arquivo .env carregado")
 }
 
 func CarregarConfig() Config {
-	err := godotenv.Load("../.env")
+	logger.Log("Iniciando carregamento das configurações")
 
-	println("carregando .env...")
+	err := godotenv.Load("../.env")
 	if err != nil {
-		println("erro ao pegar o .env: ", err)
+		logger.Warn("Não foi possível carregar ../.env, usando variáveis de ambiente existentes")
+	} else {
+		logger.OK("../.env carregado")
 	}
+
+	logger.Log("Lendo variáveis do banco de dados")
 
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
@@ -34,8 +46,17 @@ func CarregarConfig() Config {
 	password := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 
+	if host == "" || port == "" || user == "" || dbName == "" {
+		logger.Warn("Algumas configurações do banco estão vazias")
+	}
+
+	logger.Log("Montando URL do banco de dados")
+
 	url := os.Getenv("DATABASE_URL")
+
 	if url == "" {
+		logger.Log("DATABASE_URL não encontrada, criando URL automaticamente")
+
 		url = fmt.Sprintf(
 			"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 			user,
@@ -44,33 +65,63 @@ func CarregarConfig() Config {
 			port,
 			dbName,
 		)
+
+		logger.OK("URL do banco criada")
+	} else {
+		logger.OK("DATABASE_URL encontrada")
 	}
 
+	porta := os.Getenv("PORT")
+
+	if porta == "" {
+		logger.Warn("PORT não configurada")
+	}
+
+	jwt := os.Getenv("JWT_SECRET")
+
+	if jwt == "" {
+		logger.Warn("JWT_SECRET não configurada")
+	}
+
+	logger.OK("Configurações carregadas com sucesso")
+
 	return Config{
-		Porta:         os.Getenv("PORT"),
+		Porta:         porta,
 		URLBancoDados: url,
-		ChaveJWT:      os.Getenv("JWT_SECRET"),
+		ChaveJWT:      jwt,
 	}
 }
 
 func (c Config) ExibirConfiguracao() {
-	log.Println("===== CONFIGURAÇÃO =====")
-	log.Printf("Porta: %s", c.Porta)
-	log.Printf("Banco: %s", c.URLBancoDados)
-	log.Printf("JWT configurado: %t", c.ChaveJWT != "")
-	log.Println("========================")
+	logger.Log("Exibindo configurações da aplicação")
+
+	logger.Log("===== CONFIGURAÇÃO =====")
+	logger.Log(fmt.Sprintf("Porta: %s", c.Porta))
+	logger.Log(fmt.Sprintf("Banco configurado: %t", c.URLBancoDados != ""))
+	logger.Log(fmt.Sprintf("JWT configurado: %t", c.ChaveJWT != ""))
+	logger.Log("========================")
+
+	logger.OK("Configurações exibidas")
 }
 
 func ConectarBanco(url string) *pgxpool.Pool {
+	logger.Log("Iniciando conexão com banco de dados")
+
 	bd, err := pgxpool.New(context.Background(), url)
+
 	if err != nil {
-		log.Fatalf("Falha ao conectar ao banco: %v", err)
+		logger.Err("Falha ao criar pool de conexão com banco")
+		panic(err)
 	}
+
+	logger.Log("Testando conexão com banco")
 
 	if err := bd.Ping(context.Background()); err != nil {
-		log.Fatalf("Falha ao fazer ping no banco: %v", err)
+		logger.Err("Banco de dados não respondeu ao ping")
+		panic(err)
 	}
 
-	log.Println("Banco de dados conectado")
+	logger.OK("Banco de dados conectado com sucesso")
+
 	return bd
 }

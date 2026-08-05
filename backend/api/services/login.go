@@ -47,7 +47,7 @@ func (s *LoginService) Login(email string, senha string) (*LoginResponse, error)
 	}
 
 	err = bcrypt.CompareHashAndPassword(
-		[]byte(usuario.SenhaHash),
+		[]byte(usuario.Senha),
 		[]byte(senha),
 	)
 

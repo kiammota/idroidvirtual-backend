@@ -49,17 +49,20 @@ func (s *UsuarioService) Criar(usuario *models.Usuario) error {
 	if usuario.Nome == "" {
 		return errors.New("nome obrigatório")
 	}
+	if usuario.EmpresaID < 1 {
+		return errors.New("Empresa não existe no sistema!")
+	}
 
 	if usuario.Email == "" {
 		return errors.New("email obrigatório")
 	}
 
-	if usuario.SenhaHash == "" {
+	if usuario.Senha == "" {
 		return errors.New("senha obrigatória")
 	}
 
 	senhaHash, err := bcrypt.GenerateFromPassword(
-		[]byte(usuario.SenhaHash),
+		[]byte(usuario.Senha),
 		bcrypt.DefaultCost,
 	)
 
@@ -67,7 +70,7 @@ func (s *UsuarioService) Criar(usuario *models.Usuario) error {
 		return err
 	}
 
-	usuario.SenhaHash = string(senhaHash)
+	usuario.Senha = string(senhaHash)
 
 	return s.UsuarioRepository.Criar(usuario)
 }

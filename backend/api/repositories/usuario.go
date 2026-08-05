@@ -45,7 +45,7 @@ func (r *UsuarioRepository) BuscarPorEmail(email string) (*models.Usuario, error
 		&usuario.EmpresaID,
 		&usuario.Email,
 		&usuario.Nome,
-		&usuario.SenhaHash,
+		&usuario.Senha,
 		&usuario.CriadoEm,
 	)
 
@@ -87,7 +87,7 @@ func (r *UsuarioRepository) BuscarPorID(id int64) (*models.Usuario, error) {
 		&usuario.EmpresaID,
 		&usuario.Email,
 		&usuario.Nome,
-		&usuario.SenhaHash,
+		&usuario.Senha,
 		&usuario.CriadoEm,
 	)
 
@@ -129,7 +129,7 @@ func (r *UsuarioRepository) Criar(usuario *models.Usuario) error {
 		usuario.EmpresaID,
 		usuario.Email,
 		usuario.Nome,
-		usuario.SenhaHash,
+		usuario.Senha,
 	).Scan(
 		&usuario.ID,
 		&usuario.CriadoEm,

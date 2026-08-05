@@ -8,8 +8,12 @@ info:
     filtrada pela categoria informada na rota.
 
 servers:
-  - url: http://localhost:7192
+  - url: http://localhost:8080
     description: Ambiente local
+    variables:
+      port:
+        default: "7192"
+        description: Porta da API
 
 security:
   - bearerAuth: []
