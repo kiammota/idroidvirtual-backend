@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -30,6 +31,22 @@ func NewVendaService(
 		produtoRepo: produtoRepo,
 		auditRepo:   auditRepo,
 	}
+}
+
+func (s *VendaService) ObterVendasDoDia(ctx context.Context) ([]models.Venda, error) {
+	agora := time.Now()
+	inicioDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 0, 0, 0, 0, agora.Location())
+	fimDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 23, 59, 59, 999999999, agora.Location())
+
+	return s.vendaRepo.BuscarPorPeriodo(ctx, inicioDia, fimDia)
+}
+
+func (s *VendaService) ObterVendasDoMes(ctx context.Context) ([]models.Venda, error) {
+	agora := time.Now()
+	inicioMes := time.Date(agora.Year(), agora.Month(), 1, 0, 0, 0, 0, agora.Location())
+	fimMes := inicioMes.AddDate(0, 1, 0).Add(-time.Nanosecond)
+
+	return s.vendaRepo.BuscarPorPeriodo(ctx, inicioMes, fimMes)
 }
 
 // ExecutarVenda realiza a venda, baixa o estoque e registra na auditoria
