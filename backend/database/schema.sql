@@ -53,6 +53,7 @@ CREATE TABLE produtos (
     id BIGSERIAL PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
     preco NUMERIC(12,2) NOT NULL DEFAULT 0,
+    categoria TEXT NOT NULL,
     estoque INTEGER NOT NULL DEFAULT 0,
     criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
     atualizado_em TIMESTAMP NOT NULL DEFAULT NOW()
@@ -100,16 +101,30 @@ ON clientes(telefone);
 CREATE TABLE vendas (
     id BIGSERIAL PRIMARY KEY,
     produto_id BIGINT NOT NULL,
+    usuario_id BIGINT NOT NULL,
+    cliente_id BIGINT, -- Pode ser NULL se a venda for anônima/balcão
     quantidade INTEGER NOT NULL DEFAULT 1,
     total NUMERIC(12,2) NOT NULL,
     tipo_pagamento VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'CONCLUIDA',
     criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
+
+    -- Chaves Estrangeiras (FKs)
     CONSTRAINT fk_venda_produto
         FOREIGN KEY(produto_id)
         REFERENCES produtos(id)
-        ON DELETE RESTRICT
-);
+        ON DELETE RESTRICT,
 
+    CONSTRAINT fk_venda_usuario
+        FOREIGN KEY(usuario_id)
+        REFERENCES usuarios(id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_venda_cliente
+        FOREIGN KEY(cliente_id)
+        REFERENCES clientes(id)
+        ON DELETE SET NULL
+);
 
 CREATE INDEX idx_vendas_produto_id
 ON vendas(produto_id);
