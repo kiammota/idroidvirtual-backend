@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#f06522">
+  <title>Nova Venda · IDroid Virtual</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="app-header">
+    <button class="back-btn" id="btn-back" aria-label="Voltar">←</button>
+    <h1>Registrar Nova Venda</h1>
+  </header>
+
+  <main class="app-main">
+    <form id="form-venda" class="animate-in">
+      <!-- Cliente -->
+      <div class="card">
+        <div class="card-title">Cliente</div>
+        <div class="form-group">
+          <label for="venda-cliente">Selecionar ou digitar nome</label>
+          <input type="text" id="venda-cliente" list="lista-clientes" placeholder="Nome do cliente" required>
+          <datalist id="lista-clientes"></datalist>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-cadastro-rapido">＋ Cadastro rápido</button>
+        <div id="cadastro-rapido" class="hidden mt-2">
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="tel" id="rapido-tel" inputmode="tel" placeholder="(00) 00000-0000">
+          </div>
+          <div class="form-group">
+            <label>Endereço</label>
+            <input type="text" id="rapido-end">
+          </div>
+        </div>
+      </div>
+
+      <!-- Produtos / Serviços -->
+      <div class="card">
+        <div class="card-title">Produtos / Serviços</div>
+        <div id="itens-venda"></div>
+        <button type="button" class="btn btn-outline btn-sm btn-block mt-1" id="btn-add-item">＋ Adicionar item</button>
+      </div>
+
+      <!-- Brinde -->
+      <div class="card">
+        <div class="toggle-row">
+          <span>Saída de Brinde (perda operacional)</span>
+          <div class="toggle" id="toggle-brinde" role="switch" aria-checked="false"></div>
+        </div>
+      </div>
+
+      <!-- Trade-in -->
+      <div class="card">
+        <div class="card-title">Trade-in (aparelho antigo)</div>
+        <div class="toggle-row">
+          <span>Registrar aparelho antigo</span>
+          <div class="toggle" id="toggle-trade" role="switch" aria-checked="false"></div>
+        </div>
+        <div id="trade-fields" class="hidden">
+          <div class="form-group">
+            <label for="trade-modelo">Modelo</label>
+            <input type="text" id="trade-modelo" placeholder="Ex: Galaxy A14">
+          </div>
+          <div class="form-group">
+            <label for="trade-imei">IMEI</label>
+            <input type="text" id="trade-imei" maxlength="15" inputmode="numeric">
+          </div>
+          <div class="form-group">
+            <label for="trade-valor">Valor de abatimento (R$)</label>
+            <input type="number" id="trade-valor" step="0.01" min="0" inputmode="decimal" value="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagamento -->
+      <div class="card">
+        <div class="card-title">Pagamento</div>
+        <div class="toggle-row">
+          <span>Desconto padrão 10%</span>
+          <div class="toggle on" id="toggle-desc" role="switch" aria-checked="true"></div>
+        </div>
+        <div class="toggle-row">
+          <span>Simular juros maquininha</span>
+          <div class="toggle" id="toggle-juros" role="switch" aria-checked="false"></div>
+        </div>
+        <div class="form-group hidden" id="juros-group">
+          <label for="juros-pct">Taxa (%)</label>
+          <input type="number" id="juros-pct" value="2.5" step="0.1" min="0">
+        </div>
+        <div class="form-group">
+          <label for="forma-pag">Forma de pagamento</label>
+          <select id="forma-pag">
+            <option value="DINHEIRO">Dinheiro</option>
+            <option value="PIX">Pix</option>
+            <option value="CARTAO">Cartão</option>
+            <option value="OUTROS">Outros</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Entrega -->
+      <div class="card">
+        <div class="card-title">Entrega (opcional)</div>
+        <div class="toggle-row">
+          <span>Vincular entrega / motoboy</span>
+          <div class="toggle" id="toggle-entrega" role="switch" aria-checked="false"></div>
+        </div>
+        <div id="entrega-fields" class="hidden">
+          <div class="form-group">
+            <label for="ent-motoboy">Motoboy</label>
+            <input type="text" id="ent-motoboy">
+          </div>
+          <div class="form-group">
+            <label for="ent-status">Status</label>
+            <select id="ent-status">
+              <option value="ENVIADO">Enviado</option>
+              <option value="EM_TRANSPORTE">Em transporte</option>
+              <option value="ENTREGUE">Entregue</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumo -->
+      <div class="summary-box">
+        <div class="summary-row"><span>Subtotal itens</span><span id="r-subtotal">R$ 0,00</span></div>
+        <div class="summary-row"><span>Desconto 10%</span><span id="r-desc">R$ 0,00</span></div>
+        <div class="summary-row"><span>Trade-in (abatimento)</span><span id="r-trade">R$ 0,00</span></div>
+        <div class="summary-row"><span>Juros</span><span id="r-juros">R$ 0,00</span></div>
+        <div class="summary-row total"><span>Total a pagar</span><span id="r-total">R$ 0,00</span></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block mt-2">Finalizar Venda</button>
+    </form>
+  </main>
+
+  
+  <script type="module" src="../../js/pages/venda.js"></script>
+</body>
+</html>

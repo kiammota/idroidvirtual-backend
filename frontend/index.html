@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IDroid Virtual - Gestão</title>
+  <script>
+    const token = sessionStorage.getItem('gv_jwt_token');
+    window.location.replace(token ? 'pages/home/' : 'pages/login/');
+  </script>
+</head>
+<body>
+  <p style="font-family:sans-serif;text-align:center;margin-top:40vh;color:#888">Carregando IDroid Virtual…</p>
+</body>
+</html>

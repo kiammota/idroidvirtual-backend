@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#f06522">
+  <title>Clientes · IDroid Virtual</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="app-header">
+    <button class="back-btn" id="btn-back" aria-label="Voltar">←</button>
+    <h1>Meus Clientes</h1>
+  </header>
+
+  <main class="app-main">
+    <div class="tabs" id="cli-tabs">
+      <button class="tab active" data-tab="lista">Lista</button>
+      <button class="tab" data-tab="novo">Novo</button>
+    </div>
+
+    <section id="tab-lista">
+      <div class="form-group">
+        <input type="search" id="busca-cliente" placeholder="Buscar por nome, telefone ou e-mail…">
+      </div>
+      <div id="cli-list">
+        <div class="empty-state"><div class="icon">👥</div><p>Nenhum cliente cadastrado.</p></div>
+      </div>
+    </section>
+
+    <section id="tab-novo" class="hidden">
+      <form id="form-cliente">
+        <div class="form-group">
+          <label for="cli-nome">Nome *</label>
+          <input type="text" id="cli-nome" required placeholder="Nome completo">
+        </div>
+        <div class="form-group">
+          <label for="cli-telefone">Telefone *</label>
+          <input type="tel" id="cli-telefone" required placeholder="(00) 00000-0000" inputmode="tel">
+        </div>
+        <div class="form-group">
+          <label for="cli-endereco">Endereço</label>
+          <input type="text" id="cli-endereco" placeholder="Rua, número, bairro">
+        </div>
+        <div class="form-group">
+          <label for="cli-email">E-mail</label>
+          <input type="email" id="cli-email" placeholder="opcional@email.com">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Cadastrar Cliente</button>
+      </form>
+    </section>
+  </main>
+
+  
+  <script type="module" src="../../js/pages/clientes.js"></script>
+</body>
+</html>

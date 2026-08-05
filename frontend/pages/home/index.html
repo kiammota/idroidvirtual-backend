@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#f06522">
+  <title>Home · IDroid Virtual</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="app-header">
+    <h1 id="greeting">Olá, …</h1>
+    <div class="header-actions">
+      <button class="back-btn" id="btn-me" title="Meu perfil" aria-label="Perfil">👤</button>
+      <button class="back-btn" id="btn-logout" title="Sair" aria-label="Sair">⏻</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div class="grid-cards animate-in">
+      <a href="../venda/" class="grid-card" id="card-vendas">
+        <span class="icon">🛒</span>
+        <span class="label">Minhas Vendas</span>
+      </a>
+      <a href="../clientes/" class="grid-card">
+        <span class="icon">👥</span>
+        <span class="label">Meus Clientes</span>
+      </a>
+      <a href="../ordens/" class="grid-card priority">
+        <span class="icon">🛠️</span>
+        <span class="label">Ordens de Serviço</span>
+      </a>
+      <a href="../trocas/" class="grid-card">
+        <span class="icon">🔄</span>
+        <span class="label">Minhas Trocas</span>
+      </a>
+      <a href="#" class="grid-card locked" id="card-estoque" data-locked="true">
+        <span class="icon">📦</span>
+        <span class="label">Estoque &amp; Aparelhos</span>
+      </a>
+      <a href="#" class="grid-card locked" id="card-financeiro" data-locked="true">
+        <span class="icon">📊</span>
+        <span class="label">Financeiro &amp; Faturamento</span>
+      </a>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="btn-nova-venda" style="margin-bottom:12px">
+      ＋ Registrar Nova Venda
+    </button>
+
+    <a href="../entregas/" class="btn btn-outline btn-block" style="margin-bottom:12px">
+      🛵 Gestão de Entregas
+    </a>
+
+    <div class="card mt-2">
+      <div class="card-title">Resumo rápido</div>
+      <div class="summary-row"><span>Vendas hoje</span><span id="resumo-vendas">—</span></div>
+      <div class="summary-row"><span>OS abertas</span><span id="resumo-os">—</span></div>
+      <div class="summary-row"><span>Clientes</span><span id="resumo-clientes">—</span></div>
+    </div>
+  </main>
+
+  <script type="module" src="../../js/pages/home.js"></script>
+</body>
+</html>

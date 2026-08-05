@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#f06522">
+  <title>Meu Perfil · IDroid Virtual</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="app-header">
+    <button class="back-btn" id="btn-back" aria-label="Voltar">←</button>
+    <h1>Meu Perfil</h1>
+  </header>
+
+  <main class="app-main">
+    <div class="card text-center animate-in">
+      <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#f06522,#ff8a4c);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:2rem;color:white;font-weight:700" id="avatar">?</div>
+      <h2 id="user-nome" style="font-size:1.25rem;margin-bottom:4px">—</h2>
+      <p class="text-muted" id="user-email">—</p>
+    </div>
+
+    <div class="card animate-in" style="animation-delay:.1s">
+      <div class="card-title">Informações da conta</div>
+      <div class="list-item">
+        <div class="info">
+          <div class="title">ID do usuário</div>
+          <div class="sub" id="user-id">—</div>
+        </div>
+      </div>
+      <div class="list-item">
+        <div class="info">
+          <div class="title">Empresa ID</div>
+          <div class="sub" id="user-empresa">—</div>
+        </div>
+      </div>
+      <div class="list-item">
+        <div class="info">
+          <div class="title">Token JWT</div>
+          <div class="sub" id="user-token" style="word-break:break-all;font-size:0.7rem">—</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-outline btn-block mt-2" id="btn-logout">Sair da conta</button>
+  </main>
+
+  <script type="module" src="../../js/pages/me.js"></script>
+</body>
+</html>
