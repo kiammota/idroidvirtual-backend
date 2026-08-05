@@ -62,6 +62,7 @@ func main() {
 	vendaController := controllers.NewVendaController(vendaService)
 	authController := controllers.NewAuthController(loginService, auditoriaRepo)
 	ordensServicoController := controllers.NewOrdemServicoController(ordensServicoService)
+	clienteController := controllers.NewClientController(&clienteRepo)
 
 	logger.OK("Controllers carregados")
 
@@ -104,6 +105,7 @@ func main() {
 	routes.UsuarioRoutes(public, usuarioController)
 	routes.VendaRoutes(private, vendaController)
 	routes.OrdensServicoRoutes(private, ordensServicoController)
+	routes.ClienteRoutes(private, clienteController)
 
 	logger.OK("Rotas registradas com sucesso")
 

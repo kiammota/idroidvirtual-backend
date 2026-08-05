@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SetupClientRoutes registra o RouterGroup de clientes na aplicação Gin
-func SetupClientRoutes(router *gin.Engine, clientController *controllers.ClientController) {
+// ClienteRoutes registra o RouterGroup de clientes na aplicação Gin
+func ClienteRoutes(router *gin.RouterGroup, clientController *controllers.ClientController) {
 	clientsGroup := router.Group("/clients")
 	{
 		// Criar cliente
