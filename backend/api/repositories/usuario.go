@@ -103,6 +103,46 @@ func (r *UsuarioRepository) BuscarPorID(id int64) (*models.Usuario, error) {
 	return usuario, nil
 }
 
+func (r *UsuarioRepository) BuscarPorIDTx(ctx context.Context, tx pgx.Tx, id int64) (*models.Usuario, error) {
+	query := `
+		SELECT 
+			id,
+			empresa_id,
+			email,
+			nome,
+			senha,
+			criado_em
+		FROM usuarios
+		WHERE id = $1
+		LIMIT 1
+	`
+
+	usuario := &models.Usuario{}
+
+	err := tx.QueryRow(
+		ctx,
+		query,
+		id,
+	).Scan(
+		&usuario.ID,
+		&usuario.EmpresaID,
+		&usuario.Email,
+		&usuario.Nome,
+		&usuario.Senha,
+		&usuario.CriadoEm,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil // Retornar nil, nil facilita a verificação 'if usuario == nil' no Service
+		}
+
+		return nil, err
+	}
+
+	return usuario, nil
+}
+
 func (r *UsuarioRepository) Criar(usuario *models.Usuario) error {
 
 	query := `

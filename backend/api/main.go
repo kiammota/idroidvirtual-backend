@@ -41,11 +41,11 @@ func main() {
 
 	// 3. Serviços
 	logger.Log("Inicializando serviços")
-
+	auditoriaService := services.NewAuditoriaService(auditoriaRepo)
 	usuarioService := services.NewUsuarioService(usuarioRepo)
 	tokenService := services.NewTokenService(cfg.ChaveJWT)
 	loginService := services.NewLoginService(usuarioRepo, tokenService)
-	vendaService := services.NewVendaService(bd, vendaRepo, produtoRepo, *auditoriaRepo)
+	vendaService := services.NewVendaService(bd, vendaRepo, produtoRepo, *usuarioRepo, clienteRepo, *auditoriaService)
 	ordensServicoService := services.NewOrdensServicoService(
 		bd,
 		ordemServicoRepo,

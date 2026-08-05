@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"backend/gateways"
+	"backend/models"
 	"backend/services"
 
 	"github.com/gin-gonic/gin"
@@ -21,13 +22,6 @@ func NewVendasController(vendaService *services.VendaService) *VendasController 
 	}
 }
 
-type CreateSaleInput struct {
-	UsuarioID     int64  `json:"usuario_id" binding:"required"`
-	ProdutoID     int64  `json:"produto_id" binding:"required"`
-	Quantidade    int    `json:"quantidade" binding:"required,gt=0"`
-	TipoPagamento string `json:"tipo_pagamento" binding:"required"`
-}
-
 type CancelSaleInput struct {
 	UsuarioID int64  `json:"usuario_id" binding:"required"`
 	Motivo    string `json:"motivo"`
@@ -35,7 +29,7 @@ type CancelSaleInput struct {
 
 // POST /sales
 func (c *VendasController) Create(ctx *gin.Context) {
-	var input CreateSaleInput
+	var input models.Venda
 
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		gateways.Error(ctx, http.StatusBadRequest, "Dados inválidos para registro da venda")
@@ -45,6 +39,7 @@ func (c *VendasController) Create(ctx *gin.Context) {
 	venda, err := c.vendaService.ExecutarVenda(
 		ctx.Request.Context(),
 		input.UsuarioID,
+		input.ClienteID,
 		input.ProdutoID,
 		input.Quantidade,
 		input.TipoPagamento,

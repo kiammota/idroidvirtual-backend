@@ -22,22 +22,28 @@ type FechamentoResponse struct {
 
 type VendaService struct {
 	pool        *pgxpool.Pool
+	auditoria   AuditoriaService
 	vendaRepo   repositories.VendaRepository
+	usuarioRepo repositories.UsuarioRepository
+	clienteRepo repositories.ClienteRepository
 	produtoRepo repositories.ProdutoRepository
-	auditRepo   repositories.AuditoriaRepository
 }
 
 func NewVendaService(
 	pool *pgxpool.Pool,
 	vendaRepo repositories.VendaRepository,
 	produtoRepo repositories.ProdutoRepository,
-	auditRepo repositories.AuditoriaRepository,
+	usuarioRep repositories.UsuarioRepository,
+	clienteRep repositories.ClienteRepository,
+	audit AuditoriaService,
 ) *VendaService {
 	return &VendaService{
 		pool:        pool,
 		vendaRepo:   vendaRepo,
 		produtoRepo: produtoRepo,
-		auditRepo:   auditRepo,
+		usuarioRepo: usuarioRep,
+		clienteRepo: clienteRep,
+		auditoria:   audit,
 	}
 }
 
@@ -110,9 +116,11 @@ func (s *VendaService) ObterVendasDoMes(ctx context.Context) ([]models.Venda, er
 }
 
 // ExecutarVenda realiza a venda, baixa o estoque e registra na auditoria
+// ExecutarVenda realiza a venda, baixa o estoque e registra na auditoria
 func (s *VendaService) ExecutarVenda(
 	ctx context.Context,
 	usuarioID int64,
+	clienteID int64, // 0 = Consumidor Final
 	produtoID int64,
 	quantidade int,
 	tipoPagamento string,
@@ -128,6 +136,7 @@ func (s *VendaService) ExecutarVenda(
 	}
 	defer tx.Rollback(ctx)
 
+	// 1. Produto
 	produto, err := s.produtoRepo.BuscarPorIDTx(ctx, tx, produtoID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar produto: %w", err)
@@ -135,15 +144,34 @@ func (s *VendaService) ExecutarVenda(
 	if produto == nil {
 		return nil, errors.New("produto não encontrado")
 	}
-
 	if produto.Estoque < quantidade {
 		return nil, fmt.Errorf(
 			"estoque insuficiente (disponível: %d, solicitado: %d)",
-			produto.Estoque,
-			quantidade,
+			produto.Estoque, quantidade,
 		)
 	}
 
+	// 2. Usuário
+	usuario, err := s.usuarioRepo.BuscarPorIDTx(ctx, tx, usuarioID)
+	if err != nil || usuario == nil {
+		return nil, errors.New("usuário associado à venda não foi encontrado")
+	}
+
+	// 3. Cliente (opcional)
+	clienteInfo := "para Consumidor Final"
+	if clienteID > 0 {
+		cliente, err := s.clienteRepo.BuscarPorIDTx(ctx, tx, clienteID)
+		if err == nil && cliente != nil {
+			switch {
+			case cliente.Nome != "":
+				clienteInfo = fmt.Sprintf("para o cliente %s", cliente.Nome)
+			case cliente.Telefone != nil && *cliente.Telefone != "":
+				clienteInfo = fmt.Sprintf("para o cliente com o número %s", *cliente.Telefone)
+			}
+		}
+	}
+
+	// 4. Baixa de estoque
 	if err := s.produtoRepo.DiminuirEstoqueTx(ctx, tx, produtoID, quantidade); err != nil {
 		return nil, fmt.Errorf("falha ao dar baixa no estoque: %w", err)
 	}
@@ -153,6 +181,7 @@ func (s *VendaService) ExecutarVenda(
 	venda := &models.Venda{
 		ProdutoID:     produtoID,
 		UsuarioID:     usuarioID,
+		ClienteID:     clienteID, // 0 = sem cliente
 		Quantidade:    quantidade,
 		Total:         valorTotal,
 		TipoPagamento: tipoPagamento,
@@ -161,6 +190,30 @@ func (s *VendaService) ExecutarVenda(
 
 	if err := s.vendaRepo.CriarTx(ctx, tx, venda); err != nil {
 		return nil, fmt.Errorf("falha ao registrar venda: %w", err)
+	}
+
+	// 5. Auditoria
+	acaoTexto := fmt.Sprintf(
+		"%s realizou venda de %s por R$ %.2f via %s %s",
+		usuario.Nome,
+		produto.Nome,
+		valorTotal,
+		tipoPagamento,
+		clienteInfo,
+	)
+
+	err = s.auditoria.LogTx(
+		ctx, tx, usuarioID, acaoTexto, "vendas", venda.ID, nil,
+		map[string]interface{}{
+			"produto_id":     produtoID,
+			"cliente_id":     clienteID,
+			"quantidade":     quantidade,
+			"total":          valorTotal,
+			"tipo_pagamento": tipoPagamento,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("falha ao gravar auditoria da venda: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
