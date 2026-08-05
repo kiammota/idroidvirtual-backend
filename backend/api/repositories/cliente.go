@@ -351,3 +351,81 @@ func (r *ClienteRepository) BuscarPorIDTx(
 
 	return &c, nil
 }
+
+// BuscarPorTelefone busca clientes por número de telefone
+func (r *ClienteRepository) BuscarPorTelefone(ctx context.Context, telefone string) ([]models.Cliente, error) {
+	query := `
+		SELECT id, nome, telefone, endereco, email, criado_em, atualizado_em
+		FROM clientes
+		WHERE telefone ILIKE $1
+		ORDER BY nome ASC
+	`
+	termoBusca := fmt.Sprintf("%%%s%%", telefone)
+	rows, err := r.Pool.Query(ctx, query, termoBusca)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var clientes []models.Cliente
+	for rows.Next() {
+		var c models.Cliente
+		if err := rows.Scan(&c.ID, &c.Nome, &c.Telefone, &c.Endereco, &c.Email, &c.CriadoEm, &c.AtualizadoEm); err != nil {
+			return nil, err
+		}
+		clientes = append(clientes, c)
+	}
+	return clientes, nil
+}
+
+// BuscarPorEndereco busca clientes por endereço
+func (r *ClienteRepository) BuscarPorEndereco(ctx context.Context, endereco string) ([]models.Cliente, error) {
+	query := `
+		SELECT id, nome, telefone, endereco, email, criado_em, atualizado_em
+		FROM clientes
+		WHERE endereco ILIKE $1
+		ORDER BY nome ASC
+	`
+	termoBusca := fmt.Sprintf("%%%s%%", endereco)
+	rows, err := r.Pool.Query(ctx, query, termoBusca)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var clientes []models.Cliente
+	for rows.Next() {
+		var c models.Cliente
+		if err := rows.Scan(&c.ID, &c.Nome, &c.Telefone, &c.Endereco, &c.Email, &c.CriadoEm, &c.AtualizadoEm); err != nil {
+			return nil, err
+		}
+		clientes = append(clientes, c)
+	}
+	return clientes, nil
+}
+
+// BuscarPorEmail busca clientes pelo e-mail
+func (r *ClienteRepository) BuscarPorEmail(ctx context.Context, email string) ([]models.Cliente, error) {
+	query := `
+		SELECT id, nome, telefone, endereco, email, criado_em, atualizado_em
+		FROM clientes
+		WHERE email ILIKE $1
+		ORDER BY nome ASC
+	`
+	termoBusca := fmt.Sprintf("%%%s%%", email)
+	rows, err := r.Pool.Query(ctx, query, termoBusca)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var clientes []models.Cliente
+	for rows.Next() {
+		var c models.Cliente
+		if err := rows.Scan(&c.ID, &c.Nome, &c.Telefone, &c.Endereco, &c.Email, &c.CriadoEm, &c.AtualizadoEm); err != nil {
+			return nil, err
+		}
+		clientes = append(clientes, c)
+	}
+	return clientes, nil
+}

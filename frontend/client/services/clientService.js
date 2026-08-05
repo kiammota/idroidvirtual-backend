@@ -1,5 +1,5 @@
 import { HttpClient } from "../http.js";
-import { Cliente } from "../models/clienteModel.js"; // Importe a classe no caminho correto do seu projeto
+import { Cliente } from "../models/ClienteModel.js"; // Importe a classe no caminho correto do seu projeto
 
 export class ClientService extends HttpClient {
   /**
