@@ -1,4 +1,5 @@
 import { HttpClient } from "../http.js";
+import { Venda } from "../models/VendaModel.js"; // Ajuste o caminho conforme a estrutura do seu projeto
 
 export class SaleService extends HttpClient {
   /**
@@ -12,11 +13,17 @@ export class SaleService extends HttpClient {
    * | preco_unitario | number  | Preço unitário     |
    * 
    * @param {Object} params
-   * @returns {Promise<{success: boolean, data: Object, message: string}>}
+   * @returns {Promise<{success: boolean, data: Venda, message: string}>}
    */
   async create(params) {
     const { cliente_id, produto_id, quantidade, preco_unitario } = params;
-    return this.post('/sales', { cliente_id, produto_id, quantidade, preco_unitario });
+    const response = await this.post('/sales', { cliente_id, produto_id, quantidade, preco_unitario });
+
+    if (response.success && response.data) {
+      response.data = new Venda(response.data);
+    }
+
+    return response;
   }
 
   /**
@@ -36,18 +43,30 @@ export class SaleService extends HttpClient {
   /**
    * Lista vendas do dia
    * 
-   * @returns {Promise<{success: boolean, data: Object, message: string}>}
+   * @returns {Promise<{success: boolean, data: Venda[], message: string}>}
    */
   async getByDay() {
-    return this.get('/sales/dia');
+    const response = await this.get('/sales/dia');
+
+    if (response.success && Array.isArray(response.data)) {
+      response.data = response.data.map(data => new Venda(data));
+    }
+
+    return response;
   }
 
   /**
    * Lista vendas do mês
    * 
-   * @returns {Promise<{success: boolean, data: Object, message: string}>}
+   * @returns {Promise<{success: boolean, data: Venda[], message: string}>}
    */
   async getByMonth() {
-    return this.get('/sales/mes');
+    const response = await this.get('/sales/mes');
+
+    if (response.success && Array.isArray(response.data)) {
+      response.data = response.data.map(data => new Venda(data));
+    }
+
+    return response;
   }
 }

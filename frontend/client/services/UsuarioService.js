@@ -1,4 +1,5 @@
 import { HttpClient } from "../http.js";
+import { Usuario } from "../models/UsuarioModel.js"; // Ajuste o caminho de importação conforme a estrutura do seu projeto
 
 export class UserService extends HttpClient {
   /**
@@ -11,11 +12,17 @@ export class UserService extends HttpClient {
    * | senha     | string | Senha        |
    * 
    * @param {Object} params
-   * @returns {Promise<{success: boolean, data: Object, message: string}>}
+   * @returns {Promise<{success: boolean, data: Usuario, message: string}>}
    */
   async create(params) {
     const { nome, email, senha } = params;
-    return this.post('/users', { nome, email, senha });
+    const response = await this.post('/users', { nome, email, senha });
+
+    if (response.success && response.data) {
+      response.data = new Usuario(response.data);
+    }
+
+    return response;
   }
 
   /**
@@ -26,10 +33,16 @@ export class UserService extends HttpClient {
    * | id        | integer | ID do usuário|
    * 
    * @param {number} id - ID do usuário
-   * @returns {Promise<{success: boolean, data: Object, message: string}>}
+   * @returns {Promise<{success: boolean, data: Usuario, message: string}>}
    */
   async getById(id) {
-    return this.get(`/users/${id}`);
+    const response = await this.get(`/users/${id}`);
+
+    if (response.success && response.data) {
+      response.data = new Usuario(response.data);
+    }
+
+    return response;
   }
 
   /**

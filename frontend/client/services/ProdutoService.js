@@ -1,13 +1,20 @@
 import { HttpClient } from "../http.js";
+import { Produto } from "../models/ProdutoModel.js"; // Ajuste o caminho de acordo com o seu projeto
 
 export class ProductService extends HttpClient {
   /**
    * Lista todos os produtos
    * 
-   * @returns {Promise<{success: boolean, data: Array, message: string}>}
+   * @returns {Promise<{success: boolean, data: Produto[], message: string}>}
    */
   async listAll() {
-    return this.get('/products');
+    const response = await this.get('/products');
+
+    if (response.success && Array.isArray(response.data)) {
+      response.data = response.data.map(data => new Produto(data));
+    }
+
+    return response;
   }
 
   /**
@@ -22,11 +29,17 @@ export class ProductService extends HttpClient {
    * | estoque    | integer  | Qtd em estoque    |
    * 
    * @param {Object} params
-   * @returns {Promise<{success: boolean, data: Object, message: string}>}
+   * @returns {Promise<{success: boolean, data: Produto, message: string}>}
    */
   async create(params) {
     const { nome, categoria, descricao, preco, estoque } = params;
-    return this.post('/products', { nome, categoria, descricao, preco, estoque });
+    const response = await this.post('/products', { nome, categoria, descricao, preco, estoque });
+
+    if (response.success && response.data) {
+      response.data = new Produto(response.data);
+    }
+
+    return response;
   }
 
   /**
@@ -37,10 +50,16 @@ export class ProductService extends HttpClient {
    * | categoria | string | Categoria |
    * 
    * @param {string} categoria - Categoria (ex: CELULAR)
-   * @returns {Promise<{success: boolean, data: Array, message: string}>}
+   * @returns {Promise<{success: boolean, data: Produto[], message: string}>}
    */
   async listByCategory(categoria) {
-    return this.get(`/products/category/${encodeURIComponent(categoria)}`);
+    const response = await this.get(`/products/category/${encodeURIComponent(categoria)}`);
+
+    if (response.success && Array.isArray(response.data)) {
+      response.data = response.data.map(data => new Produto(data));
+    }
+
+    return response;
   }
 
   /**
@@ -56,11 +75,17 @@ export class ProductService extends HttpClient {
    * | estoque    | integer  | Qtd em estoque    |
    * 
    * @param {Object} params
-   * @returns {Promise<{success: boolean, data: Object, message: string}>}
+   * @returns {Promise<{success: boolean, data: Produto, message: string}>}
    */
   async update(params) {
     const { id, nome, categoria, descricao, preco, estoque } = params;
-    return this.post(`/products/${id}`, { nome, categoria, descricao, preco, estoque });
+    const response = await this.post(`/products/${id}`, { nome, categoria, descricao, preco, estoque });
+
+    if (response.success && response.data) {
+      response.data = new Produto(response.data);
+    }
+
+    return response;
   }
 
   /**

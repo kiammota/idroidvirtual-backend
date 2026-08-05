@@ -1,5 +1,5 @@
-
-import { HttpClient } from "../http.js"
+import { HttpClient } from "../http.js";
+import { Cliente } from "../models/clienteModel.js"; // Importe a classe no caminho correto do seu projeto
 
 export class ClientService extends HttpClient {
   /**
@@ -13,20 +13,32 @@ export class ClientService extends HttpClient {
    * | endereco  | string | Endereço     |
    * 
    * @param {Object} params
-   * @returns {Promise<{success: boolean, data: Object, message: string}>}
+   * @returns {Promise<{success: boolean, data: Cliente, message: string}>}
    */
   async create(params) {
     const { nome, telefone, email, endereco } = params;
-    return this.post('/clients/', { nome, telefone, email, endereco });
+    const response = await this.post('/clients/', { nome, telefone, email, endereco });
+    
+    if (response.success && response.data) {
+      response.data = new Cliente(response.data);
+    }
+    
+    return response;
   }
 
   /**
    * Lista todos os clientes
    * 
-   * @returns {Promise<{success: boolean, data: Array, message: string}>}
+   * @returns {Promise<{success: boolean, data: Cliente[], message: string}>}
    */
   async listAll() {
-    return this.get('/clients/');
+    const response = await this.get('/clients/');
+    
+    if (response.success && Array.isArray(response.data)) {
+      response.data = response.data.map(data => new Cliente(data));
+    }
+    
+    return response;
   }
 
   /**
@@ -37,10 +49,16 @@ export class ClientService extends HttpClient {
    * | id        | integer | ID do cliente|
    * 
    * @param {number} id - ID do cliente
-   * @returns {Promise<{success: boolean, data: Object, message: string}>}
+   * @returns {Promise<{success: boolean, data: Cliente, message: string}>}
    */
   async getById(id) {
-    return this.get(`/clients/${id}`);
+    const response = await this.get(`/clients/${id}`);
+    
+    if (response.success && response.data) {
+      response.data = new Cliente(response.data);
+    }
+    
+    return response;
   }
 
   /**
@@ -51,10 +69,16 @@ export class ClientService extends HttpClient {
    * | telefone  | string | Telefone  |
    * 
    * @param {string} telefone - Número de telefone
-   * @returns {Promise<{success: boolean, data: Array, message: string}>}
+   * @returns {Promise<{success: boolean, data: Cliente[], message: string}>}
    */
   async searchByPhone(telefone) {
-    return this.get(`/clients/number?telefone=${encodeURIComponent(telefone)}`);
+    const response = await this.get(`/clients/number?telefone=${encodeURIComponent(telefone)}`);
+    
+    if (response.success && Array.isArray(response.data)) {
+      response.data = response.data.map(data => new Cliente(data));
+    }
+    
+    return response;
   }
 
   /**
@@ -65,10 +89,16 @@ export class ClientService extends HttpClient {
    * | endereco  | string | Endereço  |
    * 
    * @param {string} endereco - Endereço
-   * @returns {Promise<{success: boolean, data: Array, message: string}>}
+   * @returns {Promise<{success: boolean, data: Cliente[], message: string}>}
    */
   async searchByAddress(endereco) {
-    return this.get(`/clients/address?endereco=${encodeURIComponent(endereco)}`);
+    const response = await this.get(`/clients/address?endereco=${encodeURIComponent(endereco)}`);
+    
+    if (response.success && Array.isArray(response.data)) {
+      response.data = response.data.map(data => new Cliente(data));
+    }
+    
+    return response;
   }
 
   /**
@@ -79,10 +109,16 @@ export class ClientService extends HttpClient {
    * | nome      | string | Nome      |
    * 
    * @param {string} nome - Nome do cliente
-   * @returns {Promise<{success: boolean, data: Array, message: string}>}
+   * @returns {Promise<{success: boolean, data: Cliente[], message: string}>}
    */
   async searchByName(nome) {
-    return this.get(`/clients/name?nome=${encodeURIComponent(nome)}`);
+    const response = await this.get(`/clients/name?nome=${encodeURIComponent(nome)}`);
+    
+    if (response.success && Array.isArray(response.data)) {
+      response.data = response.data.map(data => new Cliente(data));
+    }
+    
+    return response;
   }
 
   /**
@@ -93,9 +129,15 @@ export class ClientService extends HttpClient {
    * | email     | string | Email     |
    * 
    * @param {string} email - Email do cliente
-   * @returns {Promise<{success: boolean, data: Array, message: string}>}
+   * @returns {Promise<{success: boolean, data: Cliente[], message: string}>}
    */
   async searchByEmail(email) {
-    return this.get(`/clients/email?email=${encodeURIComponent(email)}`);
+    const response = await this.get(`/clients/email?email=${encodeURIComponent(email)}`);
+    
+    if (response.success && Array.isArray(response.data)) {
+      response.data = response.data.map(data => new Cliente(data));
+    }
+    
+    return response;
   }
 }

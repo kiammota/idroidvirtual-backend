@@ -1,20 +1,21 @@
-import { HttpClient } from "../http.js"
+import { HttpClient } from "../http.js";
+import { LoginRequest } from "../models/LoginModel.js";
 
 export class AuthService extends HttpClient {
   /**
    * Realiza login
    * 
-   * | Parâmetro | Tipo   | Descrição      |
-   * |-----------|--------|----------------|
-   * | login     | string | Email/usuário  |
-   * | senha     | string | Senha          |
-   * 
-   * @param {string} login - Email ou usuário
-   * @param {string} senha - Senha
+   * @param {string} email - Email do usuário
+   * @param {string} senha - Senha do usuário
    * @returns {Promise<{success: boolean, data: string, message: string}>}
    */
-  async login(login, senha) {
-    const response = await this.post('/auth/login', { login, senha });
+  async login(email, senha) {
+    const model = new LoginRequest({
+      email,
+      senha
+    });
+
+    const response = await this.post('/auth/login', model);
 
     if (response.success && response.data) {
       this.setToken(response.data);
@@ -34,10 +35,6 @@ export class AuthService extends HttpClient {
 
   /**
    * Valida senha administrativa
-   * 
-   * | Parâmetro | Tipo   | Descrição      |
-   * |-----------|--------|----------------|
-   * | senha     | string | Senha admin    |
    * 
    * @param {string} senha - Senha administrativa
    * @returns {Promise<{success: boolean, data: null, message: string}>}
