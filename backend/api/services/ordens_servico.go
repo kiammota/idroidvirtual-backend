@@ -11,28 +11,28 @@ import (
 )
 
 type OrdemServicoPatch struct {
-	ClienteID *int64  `json:"cliente_id,omitempty"`
-	ProdutoID *int64  `json:"produto_id,omitempty"`
-	Status    *string `json:"status,omitempty"`
+	NumeroOrdem *int64  `json:"numero_ordem,omitempty"`
+	ClienteID   *int64  `json:"cliente_id,omitempty"`
+	Defeito     *string `json:"defeito,omitempty"`
+	Servicos    *string `json:"servicos,omitempty"`
+	Assinatura  *string `json:"assinatura,omitempty"`
+	Status      *string `json:"status,omitempty"`
 }
 
 type OrdensServicoService struct {
 	Pool              *pgxpool.Pool
 	OrdensServicoRepo *repositories.OrdemServicoRepository
-	ProdutoRepo       *repositories.ProdutoRepository
 	ClienteRepo       *repositories.ClienteRepository
 }
 
 func NewOrdensServicoService(
 	pool *pgxpool.Pool,
 	ordemRepo *repositories.OrdemServicoRepository,
-	produtoRepo *repositories.ProdutoRepository,
 	clienteRepo *repositories.ClienteRepository,
 ) *OrdensServicoService {
 	return &OrdensServicoService{
 		Pool:              pool,
 		OrdensServicoRepo: ordemRepo,
-		ProdutoRepo:       produtoRepo,
 		ClienteRepo:       clienteRepo,
 	}
 }
@@ -42,8 +42,9 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 	if ordem.ClienteID <= 0 {
 		return errors.New("cliente obrigatório")
 	}
-	if ordem.ProdutoID <= 0 {
-		return errors.New("produto obrigatório")
+
+	if ordem.Status == "" {
+		ordem.Status = "ABERTA"
 	}
 
 	tx, err := s.Pool.Begin(ctx)
@@ -62,14 +63,6 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 	}
 	if cliente == nil {
 		return errors.New("cliente não encontrado")
-	}
-
-	produto, err := s.ProdutoRepo.BuscarPorIDTx(ctx, tx, ordem.ProdutoID)
-	if err != nil {
-		return err
-	}
-	if produto == nil {
-		return errors.New("produto não encontrado")
 	}
 
 	if err = s.OrdensServicoRepo.CriarTx(ctx, tx, ordem); err != nil {
@@ -133,6 +126,13 @@ func (s *OrdensServicoService) Atualizar(ctx context.Context, id int64, patch *O
 
 	atualizado := *existente
 
+	if patch.NumeroOrdem != nil {
+		if *patch.NumeroOrdem <= 0 {
+			return errors.New("número de ordem inválido")
+		}
+		atualizado.NumeroOrdem = *patch.NumeroOrdem
+	}
+
 	if patch.ClienteID != nil {
 		if *patch.ClienteID <= 0 {
 			return errors.New("cliente inválido")
@@ -147,18 +147,16 @@ func (s *OrdensServicoService) Atualizar(ctx context.Context, id int64, patch *O
 		atualizado.ClienteID = *patch.ClienteID
 	}
 
-	if patch.ProdutoID != nil {
-		if *patch.ProdutoID <= 0 {
-			return errors.New("produto inválido")
-		}
-		produto, err := s.ProdutoRepo.BuscarPorIDTx(ctx, tx, *patch.ProdutoID)
-		if err != nil {
-			return err
-		}
-		if produto == nil {
-			return errors.New("produto não encontrado")
-		}
-		atualizado.ProdutoID = *patch.ProdutoID
+	if patch.Defeito != nil {
+		atualizado.Defeito = patch.Defeito
+	}
+
+	if patch.Servicos != nil {
+		atualizado.Servicos = patch.Servicos
+	}
+
+	if patch.Assinatura != nil {
+		atualizado.Assinatura = patch.Assinatura
 	}
 
 	if patch.Status != nil {

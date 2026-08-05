@@ -46,12 +46,7 @@ func main() {
 	tokenService := services.NewTokenService(cfg.ChaveJWT)
 	loginService := services.NewLoginService(usuarioRepo, tokenService)
 	vendaService := services.NewVendaService(bd, vendaRepo, produtoRepo, *usuarioRepo, clienteRepo, *auditoriaService)
-	ordensServicoService := services.NewOrdensServicoService(
-		bd,
-		ordemServicoRepo,
-		&produtoRepo,
-		&clienteRepo,
-	)
+	ordensServicoService := services.NewOrdensServicoService(bd, ordemServicoRepo, &clienteRepo)
 
 	logger.OK("Serviços carregados")
 

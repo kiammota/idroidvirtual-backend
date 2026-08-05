@@ -38,7 +38,7 @@ paths:
             schema:
               $ref: '#/components/schemas/LoginRequest'
             example:
-              login: usuario@email.com
+              emial: usuario@email.com
               senha: "123456"
       responses:
         '200':

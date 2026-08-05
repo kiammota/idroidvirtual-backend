@@ -116,7 +116,6 @@ func (s *VendaService) ObterVendasDoMes(ctx context.Context) ([]models.Venda, er
 }
 
 // ExecutarVenda realiza a venda, baixa o estoque e registra na auditoria
-// ExecutarVenda realiza a venda, baixa o estoque e registra na auditoria
 func (s *VendaService) ExecutarVenda(
 	ctx context.Context,
 	usuarioID int64,
