@@ -45,7 +45,7 @@ paths:
             examples:
               exemplo:
                 value:
-                  login: usuario@email.com
+                  email: usuario@email.com
                   senha: 123456
       responses:
         '200':

@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 
+	"backend/gateways"
 	"backend/models"
 	"backend/repositories"
 	"backend/services"
@@ -16,7 +17,8 @@ type AuthController struct {
 }
 
 func NewAuthController(
-	loginService *services.LoginService, auditoria *repositories.AuditoriaRepository,
+	loginService *services.LoginService,
+	auditoria *repositories.AuditoriaRepository,
 ) *AuthController {
 
 	return &AuthController{
@@ -30,11 +32,10 @@ func (c *AuthController) UsuarioLogar(ctx *gin.Context) {
 	var login models.LoginRequest
 
 	if err := ctx.ShouldBindJSON(&login); err != nil {
-		ctx.AbortWithStatusJSON(
+		gateways.Error(
+			ctx,
 			http.StatusBadRequest,
-			gin.H{
-				"message": "Email e senha obrigatórios",
-			},
+			"email e senha obrigatórios",
 		)
 		return
 	}
@@ -45,11 +46,10 @@ func (c *AuthController) UsuarioLogar(ctx *gin.Context) {
 	)
 
 	if err != nil {
-		ctx.AbortWithStatusJSON(
+		gateways.Error(
+			ctx,
 			http.StatusUnauthorized,
-			gin.H{
-				"message": err.Error(),
-			},
+			err.Error(),
 		)
 		return
 	}
@@ -69,11 +69,18 @@ func (c *AuthController) UsuarioLogar(ctx *gin.Context) {
 	)
 
 	if err != nil {
-		ctx.Error(err)
+		gateways.Error(
+			ctx,
+			http.StatusInternalServerError,
+			"erro ao registrar auditoria",
+		)
+		return
 	}
 
-	ctx.JSON(
+	gateways.Success(
+		ctx,
 		http.StatusOK,
-		response,
+		response.Token,
+		"login realizado com sucesso",
 	)
 }

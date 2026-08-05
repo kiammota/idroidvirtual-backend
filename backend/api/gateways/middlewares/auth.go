@@ -4,17 +4,15 @@ import (
 	"net/http"
 	"strings"
 
+	"backend/services"
+
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
-var JWTSecret = []byte("sua-chave-secreta")
-
-func AuthJWT() gin.HandlerFunc {
+// AuthJWT recebe a instância do TokenService criada no bootstrap do servidor.
+func AuthJWT(tokenService *services.TokenService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-
 		authHeader := ctx.GetHeader("Authorization")
-
 		if authHeader == "" {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"success": false,
@@ -25,11 +23,10 @@ func AuthJWT() gin.HandlerFunc {
 		}
 
 		parts := strings.Split(authHeader, " ")
-
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"success": false,
-				"message": "Token inválido",
+				"message": "Formato de token inválido",
 			})
 			ctx.Abort()
 			return
@@ -37,18 +34,9 @@ func AuthJWT() gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-
-			_, ok := token.Method.(*jwt.SigningMethodHMAC)
-
-			if !ok {
-				return nil, jwt.ErrSignatureInvalid
-			}
-
-			return JWTSecret, nil
-		})
-
-		if err != nil || !token.Valid {
+		// Usa o TokenService para validar centralizadamente
+		claims, err := tokenService.ValidarToken(tokenString)
+		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"success": false,
 				"message": "Token expirado ou inválido",
@@ -57,18 +45,9 @@ func AuthJWT() gin.HandlerFunc {
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
-
-		if ok {
-
-			if usuarioID, exists := claims["usuario_id"]; exists {
-				ctx.Set("usuario_id", usuarioID)
-			}
-
-			if email, exists := claims["email"]; exists {
-				ctx.Set("email", email)
-			}
-		}
+		// Grava os dados da struct no contexto do Gin
+		ctx.Set("usuario_id", claims.UsuarioID)
+		ctx.Set("email", claims.Email)
 
 		ctx.Next()
 	}
