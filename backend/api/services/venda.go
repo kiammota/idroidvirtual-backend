@@ -12,6 +12,14 @@ import (
 	"backend/repositories"
 )
 
+// FechamentoResponse consolida os dados das vendas para os relatórios
+type FechamentoResponse struct {
+	TotalVendas int            `json:"total_vendas"`
+	Faturamento float64        `json:"faturamento"`
+	Periodo     string         `json:"periodo"`
+	Vendas      []models.Venda `json:"vendas"`
+}
+
 type VendaService struct {
 	pool        *pgxpool.Pool
 	vendaRepo   repositories.VendaRepository
@@ -31,6 +39,58 @@ func NewVendaService(
 		produtoRepo: produtoRepo,
 		auditRepo:   auditRepo,
 	}
+}
+
+// FechamentoDoDia consolida total e faturamento do dia atual
+func (s *VendaService) FechamentoDoDia(ctx context.Context) (*FechamentoResponse, error) {
+	agora := time.Now()
+	inicioDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 0, 0, 0, 0, agora.Location())
+	fimDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 23, 59, 59, 999999999, agora.Location())
+
+	vendas, err := s.vendaRepo.BuscarPorPeriodo(ctx, inicioDia, fimDia)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar vendas do dia: %w", err)
+	}
+
+	var faturamento float64
+	for _, v := range vendas {
+		if v.Status != "CANCELADA" {
+			faturamento += v.Total
+		}
+	}
+
+	return &FechamentoResponse{
+		TotalVendas: len(vendas),
+		Faturamento: faturamento,
+		Periodo:     inicioDia.Format("02/01/2006"),
+		Vendas:      vendas,
+	}, nil
+}
+
+// FechamentoDoMes consolida total e faturamento do mês atual
+func (s *VendaService) FechamentoDoMes(ctx context.Context) (*FechamentoResponse, error) {
+	agora := time.Now()
+	inicioMes := time.Date(agora.Year(), agora.Month(), 1, 0, 0, 0, 0, agora.Location())
+	fimMes := inicioMes.AddDate(0, 1, 0).Add(-time.Nanosecond)
+
+	vendas, err := s.vendaRepo.BuscarPorPeriodo(ctx, inicioMes, fimMes)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar vendas do mês: %w", err)
+	}
+
+	var faturamento float64
+	for _, v := range vendas {
+		if v.Status != "CANCELADA" {
+			faturamento += v.Total
+		}
+	}
+
+	return &FechamentoResponse{
+		TotalVendas: len(vendas),
+		Faturamento: faturamento,
+		Periodo:     inicioMes.Format("01/2006"),
+		Vendas:      vendas,
+	}, nil
 }
 
 func (s *VendaService) ObterVendasDoDia(ctx context.Context) ([]models.Venda, error) {
@@ -103,19 +163,6 @@ func (s *VendaService) ExecutarVenda(
 		return nil, fmt.Errorf("falha ao registrar venda: %w", err)
 	}
 
-	// Se você tiver um model de auditoria, registre aqui.
-	// Exemplo:
-	//
-	// auditoria := &models.Auditoria{
-	// 	UsuarioID: usuarioID,
-	// 	Acao:      "VENDA_CRIADA",
-	// 	Detalhes:  fmt.Sprintf("Venda do produto %d, quantidade %d", produtoID, quantidade),
-	// }
-	//
-	// if err := s.auditRepo.CriarTx(ctx, tx, auditoria); err != nil {
-	// 	return nil, fmt.Errorf("falha ao gravar auditoria: %w", err)
-	// }
-
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("erro ao efetivar transação: %w", err)
 	}
@@ -131,7 +178,6 @@ func (s *VendaService) CancelarVenda(
 	motivo string,
 ) error {
 
-	// 1. Busca a Venda original
 	venda, err := s.vendaRepo.BuscarPorID(ctx, vendaID)
 	if err != nil {
 		return fmt.Errorf("erro ao buscar venda: %w", err)
@@ -144,36 +190,27 @@ func (s *VendaService) CancelarVenda(
 		return errors.New("esta venda já está cancelada")
 	}
 
-	// 2. Busca o Produto atual para salvar o estoque antes do estorno
 	produto, err := s.produtoRepo.BuscarPorID(ctx, venda.ProdutoID)
 	if err != nil || produto == nil {
 		return errors.New("produto associado à venda não foi encontrado")
 	}
 
-	// 3. Inicia a Transação
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("erro ao iniciar transação: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	// 4. Estorna a quantidade de volta para o Estoque
 	err = s.produtoRepo.AumentarEstoqueTx(ctx, tx, venda.ProdutoID, venda.Quantidade)
 	if err != nil {
-		return fmt.Errorf("falha ao devover produto ao estoque: %w", err)
+		return fmt.Errorf("falha ao devolver produto ao estoque: %w", err)
 	}
 
-	// 5. Atualiza o status da venda para CANCELADA
 	err = s.vendaRepo.CancelarTx(ctx, tx, vendaID)
 	if err != nil {
 		return fmt.Errorf("falha ao cancelar registro da venda: %w", err)
 	}
 
-	if err != nil {
-		return fmt.Errorf("falha ao gravar auditoria do cancelamento: %w", err)
-	}
-
-	// 7. Efetiva todas as operações
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("erro ao efetivar cancelamento: %w", err)
 	}

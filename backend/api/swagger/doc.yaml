@@ -66,51 +66,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /auth/elevate:
-    post:
-      tags: [Auth]
-      operationId: authElevate
-      security:
-        - bearerAuth: []
-      summary: Valida senha administrativa para acessar recursos protegidos
-      description: |
-        Solicita a senha administrativa do usuário autenticado para liberar
-        operações sensíveis durante a sessão atual.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - senha
-              properties:
-                senha:
-                  type: string
-                  format: password
-                  example: "12345"
-      responses:
-        '200':
-          description: Senha administrativa validada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiEnvelope'
-              example:
-                data: null
-                success: true
-                message: "Senha administrativa validada"
-        '401':
-          description: Senha administrativa inválida
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiEnvelope'
-              example:
-                data: null
-                success: false
-                message: "Senha administrativa inválida"
-
   /users:
     post:
       tags: [Users]
