@@ -145,21 +145,41 @@ ON vendas(tipo_pagamento);
 
 CREATE TABLE ordens_servico (
     id BIGSERIAL PRIMARY KEY,
-    numero_ordem BIGINT NOT NULL UNIQUE,
+    numero_ordem BIGSERIAL NOT NULL UNIQUE,
     cliente_id BIGINT NOT NULL,
     nome_servico VARCHAR(255) NOT NULL,
     defeito TEXT,
     servicos TEXT,
+    valor NUMERIC(12,2) NOT NULL DEFAULT 0.00,
     assinatura TEXT,
     status VARCHAR(50) NOT NULL DEFAULT 'ABERTA',
     criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
     atualizado_em TIMESTAMP NOT NULL DEFAULT NOW(),
+    
     CONSTRAINT fk_os_cliente
         FOREIGN KEY(cliente_id)
         REFERENCES clientes(id)
         ON DELETE RESTRICT
 );
 
+-- Índices recomendados
+CREATE INDEX idx_os_numero_ordem ON ordens_servico(numero_ordem);
+CREATE INDEX idx_os_cliente_id ON ordens_servico(cliente_id);
+CREATE INDEX idx_os_status ON ordens_servico(status);
+
+-- 1. Cria a sequência vinculada à tabela
+CREATE SEQUENCE IF NOT EXISTS ordens_servico_numero_ordem_seq;
+
+-- 2. Define o valor padrão da coluna para puxar o próximo número da sequência
+ALTER TABLE ordens_servico 
+ALTER COLUMN numero_ordem SET DEFAULT nextval('ordens_servico_numero_ordem_seq');
+
+-- 3. Sincroniza o contador da sequência com o maior numero_ordem já existente no banco
+SELECT setval(
+    'ordens_servico_numero_ordem_seq', 
+    COALESCE((SELECT MAX(numero_ordem) FROM ordens_servico), 0) + 1, 
+    false
+);
 
 CREATE INDEX idx_os_numero_ordem
 ON ordens_servico(numero_ordem);

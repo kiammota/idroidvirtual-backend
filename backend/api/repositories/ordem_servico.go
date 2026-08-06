@@ -37,14 +37,14 @@ func (r *OrdemServicoRepository) Criar(ctx context.Context, os *models.OrdemServ
 
 func (r *OrdemServicoRepository) CriarTx(ctx context.Context, tx pgx.Tx, os *models.OrdemServico) error {
 	query := `
-		INSERT INTO ordens_servico (numero_ordem, cliente_id, defeito, servicos, assinatura, status)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, criado_em, atualizado_em
+		INSERT INTO ordens_servico (cliente_id, nome_servico, defeito, servicos, assinatura, status, valor)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id, numero_ordem, criado_em, atualizado_em
 	`
 	return tx.QueryRow(
 		ctx, query,
-		os.NumeroOrdem, os.ClienteID, os.Defeito, os.Servicos, os.Assinatura, os.Status,
-	).Scan(&os.ID, &os.CriadoEm, &os.AtualizadoEm)
+		os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Assinatura, os.Status, os.Valor,
+	).Scan(&os.ID, &os.NumeroOrdem, &os.CriadoEm, &os.AtualizadoEm)
 }
 
 func (r *OrdemServicoRepository) Atualizar(ctx context.Context, os *models.OrdemServico) error {

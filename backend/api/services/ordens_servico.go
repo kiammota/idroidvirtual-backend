@@ -44,7 +44,6 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 		ordem.Status = "ABERTA"
 	}
 
-	// Força o nome do serviço a ficar em caixa alta
 	ordem.NomeServico = strings.ToUpper(strings.TrimSpace(ordem.NomeServico))
 	if ordem.NomeServico == "" {
 		return errors.New("nome do serviço é obrigatório")
@@ -62,7 +61,7 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 
 	var cliente *models.Cliente
 
-	// 1. Tenta buscar o cliente existente pelo telefone
+	// 1. Busca cliente por telefone
 	telefoneLimpo := apenasNumeros(ordem.ClienteTelefone)
 	if telefoneLimpo != "" {
 		cliente, err = s.ClienteRepo.BuscarPorTelefoneTx(ctx, tx, telefoneLimpo)
@@ -71,16 +70,13 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 		}
 	}
 
-	// 2. Se não encontrou o cliente pelo telefone, cria um novo
+	// 2. Cria cliente se não existir
 	if cliente == nil {
-
-		// Prepara o ponteiro para o Telefone (se a string não for vazia)
 		var telPtr *string
 		if telefoneLimpo != "" {
 			telPtr = &telefoneLimpo
 		}
 
-		// Prepara o ponteiro para o Endereço padrão
 		enderecoPadrao := "NÃO INFORMADO"
 
 		novoCliente := &models.Cliente{
@@ -89,7 +85,6 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 			Endereco: &enderecoPadrao,
 		}
 
-		// Cria o cliente no banco dentro da transação (retornando o ID gerado)
 		if err = s.ClienteRepo.CriarTx(ctx, tx, novoCliente); err != nil {
 			return err
 		}
@@ -97,17 +92,13 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 		cliente = novoCliente
 	}
 
-	// 3. Pega o ID do cliente (seja ele existente ou recém-criado) e insere na ordem
+	// 3. Associa o ID do cliente
 	ordem.ClienteID = cliente.ID
 
-	// 4. Busca a quantidade atual de ordens em andamento e gera o número da OS
-	emAndamento, err := s.OrdensServicoRepo.ContarEmAndamentoTx(ctx, tx)
-	if err != nil {
-		return err
-	}
-	ordem.NumeroOrdem = int64(emAndamento + 1)
+	// REMOVIDO: Não calcule ordem.NumeroOrdem no Go!
+	// Deixe o campo zerado ou omita no INSERT para o PostgreSQL usar a SEQUENCE.
 
-	// 5. Salva a Ordem de Serviço com o ClienteID preenchido
+	// 4. Salva a Ordem de Serviço (A query SQL deve usar RETURNING numero_ordem)
 	if err = s.OrdensServicoRepo.CriarTx(ctx, tx, ordem); err != nil {
 		return err
 	}

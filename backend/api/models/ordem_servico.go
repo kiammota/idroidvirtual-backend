@@ -6,6 +6,7 @@ type OrdemServico struct {
 	ID              int64     `json:"id"`
 	NumeroOrdem     int64     `json:"numero_ordem"`
 	NomeServico     string    `json:"nome_servico"`
+	Valor           int64     `json:"valor"`
 	ClienteID       int64     `json:"cliente_id"`
 	ClienteTelefone string    `json:"telefone"`
 	Defeito         *string   `json:"defeito,omitempty"`
