@@ -125,4 +125,19 @@ export class ServiceOrderService extends HttpClient {
 
     return response;
   }
+
+  /**
+   * Lista ordens por status (ex: EM_ANDAMENTO, FINALIZADA, CANCELADA)
+   * @param {string} status
+   * @returns {Promise<{success: boolean, data: OrdemServico[], message: string}>}
+   */
+  async listByStatus(status) {
+    const response = await this.get(`/service-orders/status/${encodeURIComponent(status)}`);
+
+    if (response.success && Array.isArray(response.data)) {
+      response.data = response.data.map(data => new OrdemServico(data));
+    }
+
+    return response;
+  }
 }

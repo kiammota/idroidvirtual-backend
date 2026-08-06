@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"backend/models"
 	"backend/repositories"
@@ -90,6 +91,23 @@ func (s *OrdensServicoService) Listar(ctx context.Context, limit, offset int) ([
 		offset = 0
 	}
 	return s.OrdensServicoRepo.Listar(ctx, limit, offset)
+}
+
+func (s *OrdensServicoService) ListarPorStatus(ctx context.Context, status string, limit, offset int) ([]models.OrdemServico, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	statusLimpo := strings.ToUpper(strings.TrimSpace(status))
+
+	if statusLimpo != "EM_ANDAMENTO" && statusLimpo != "FINALIZADA" && statusLimpo != "CANCELADA" {
+		return nil, errors.New("status inválido: informe EM_ANDAMENTO, FINALIZADA ou CANCELADA")
+	}
+
+	return s.OrdensServicoRepo.ListarPorStatus(ctx, statusLimpo, limit, offset)
 }
 
 // GET /service-orders/{id}

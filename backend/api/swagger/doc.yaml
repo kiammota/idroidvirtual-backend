@@ -587,6 +587,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
+  
 
   /service-orders/client-number/{client_number}:
     get:
@@ -624,6 +625,29 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders/status/{status}:
+    get:
+      tags: [ServiceOrders]
+      operationId: listServiceOrdersByStatus
+      summary: Lista ordens de serviço por status
+      parameters:
+        - name: status
+          in: path
+          required: true
+          description: Status da ordem de serviço (ex. EM_ANDAMENTO, FINALIZADA, CANCELADA)
+          schema:
+            type: string
+            enum: [EM_ANDAMENTO, FINALIZADA, CANCELADA]
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':

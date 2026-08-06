@@ -209,6 +209,23 @@ func (r *OrdemServicoRepository) BuscarPorEmailCliente(ctx context.Context, emai
 	return r.scanRows(rows)
 }
 
+func (r *OrdemServicoRepository) ListarPorStatus(ctx context.Context, status string, limit, offset int) ([]models.OrdemServico, error) {
+	query := `
+        SELECT id, numero_ordem, cliente_id, defeito, servicos, assinatura, status, criado_em, atualizado_em
+        FROM ordens_servico
+        WHERE ($1 = '' OR status = $1)
+        ORDER BY id DESC
+        LIMIT $2 OFFSET $3
+    `
+	rows, err := r.Pool.Query(ctx, query, status, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return r.scanRows(rows)
+}
+
 func (r *OrdemServicoRepository) BuscarPorNumeroCliente(ctx context.Context, numero string, limit, offset int) ([]models.OrdemServico, error) {
 	query := `
 		SELECT os.id, os.numero_ordem, os.cliente_id, os.defeito, os.servicos, os.assinatura, os.status, os.criado_em, os.atualizado_em

@@ -64,6 +64,24 @@ func (c *OrdemServicoController) Listar(ctx *gin.Context) {
 	gateways.Success(ctx, http.StatusOK, ordens, "ordens listadas com sucesso")
 }
 
+func (c *OrdemServicoController) ListarPorStatus(ctx *gin.Context) {
+	limit, offset := parsePaginationParams(ctx)
+	status := ctx.Query("status")
+
+	if status == "" {
+		gateways.Error(ctx, http.StatusBadRequest, "o parâmetro status é obrigatório")
+		return
+	}
+
+	ordens, err := c.Service.ListarPorStatus(ctx, status, limit, offset)
+	if err != nil {
+		gateways.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	gateways.Success(ctx, http.StatusOK, ordens, "ordens listadas por status com sucesso")
+}
+
 // GET /service-orders/:id
 func (c *OrdemServicoController) BuscarPorID(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
