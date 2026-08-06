@@ -243,6 +243,16 @@ func (r *OrdemServicoRepository) ListarPorPeriodo(ctx context.Context, dataInici
 	return r.scanRows(rows)
 }
 
+func (r *OrdemServicoRepository) ContarEmAndamentoTx(ctx context.Context, tx pgx.Tx) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM ordens_servico WHERE status = 'EM_ANDAMENTO'`
+	err := tx.QueryRow(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 func (r *OrdemServicoRepository) UltimosTresMeses(ctx context.Context) ([]models.OrdemServico, error) {
 	agora := time.Now()
 	tresMesesAtras := agora.AddDate(0, -3, 0)

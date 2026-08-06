@@ -65,6 +65,15 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 		return errors.New("cliente não encontrado")
 	}
 
+	// Busca a quantidade atual de ordens em andamento dentro da transação
+	emAndamento, err := s.OrdensServicoRepo.ContarEmAndamentoTx(ctx, tx)
+	if err != nil {
+		return err
+	}
+
+	// Define o número da nova ordem (ex: quantidade atual + 1)
+	ordem.NumeroOrdem = int64(emAndamento + 1)
+
 	if err = s.OrdensServicoRepo.CriarTx(ctx, tx, ordem); err != nil {
 		return err
 	}
