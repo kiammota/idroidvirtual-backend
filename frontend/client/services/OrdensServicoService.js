@@ -1,22 +1,23 @@
 import { HttpClient } from "../http.js";
-import { OrdemServico } from "../models/OrdemServicoModel.js"; // Ajuste o caminho conforme a estrutura do projeto
+import { OrdemServico } from "../models/OrdemServicoModel.js";
 
 export class ServiceOrderService extends HttpClient {
   /**
    * Cria uma ordem de serviço
-   * 
-   * | Parâmetro    | Tipo    | Descrição         |
-   * |--------------|---------|-------------------|
-   * | cliente_id   | integer | ID do cliente     |
-   * | descricao    | string  | Descrição do serviço|
-   * | status       | string  | Status            |
-   * 
-   * @param {Object} params
+   * @param {Object|OrdemServico} params
    * @returns {Promise<{success: boolean, data: OrdemServico, message: string}>}
    */
   async create(params) {
-    const { cliente_id, descricao, status } = params;
-    const response = await this.post('/service-orders', { cliente_id, descricao, status });
+    const body = {
+      cliente_id: params.cliente_id,
+      produto_id: params.produto_id || 0,
+      defeito: params.defeito,
+      servicos: params.servicos,
+      assinatura: params.assinatura || null,
+      status: params.status || "ABERTA",
+      valor: params.valor != null ? Number(params.valor) : 0
+    };
+    const response = await this.post('/service-orders', body);
 
     if (response.success && response.data) {
       response.data = new OrdemServico(response.data);
@@ -27,7 +28,6 @@ export class ServiceOrderService extends HttpClient {
 
   /**
    * Lista todas as ordens de serviço
-   * 
    * @returns {Promise<{success: boolean, data: OrdemServico[], message: string}>}
    */
   async listAll() {
@@ -42,12 +42,7 @@ export class ServiceOrderService extends HttpClient {
 
   /**
    * Busca ordem de serviço por ID
-   * 
-   * | Parâmetro | Tipo    | Descrição     |
-   * |-----------|---------|---------------|
-   * | id        | integer | ID da ordem   |
-   * 
-   * @param {number} id - ID da ordem de serviço
+   * @param {number} id
    * @returns {Promise<{success: boolean, data: OrdemServico, message: string}>}
    */
   async getById(id) {
@@ -61,20 +56,22 @@ export class ServiceOrderService extends HttpClient {
   }
 
   /**
-   * Atualiza parcialmente uma ordem de serviço
-   * 
-   * | Parâmetro | Tipo    | Descrição     |
-   * |-----------|---------|---------------|
-   * | id        | integer | ID da ordem   |
-   * | descricao | string  | Descrição     |
-   * | status    | string  | Status        |
-   * 
+   * Atualiza uma ordem de serviço
    * @param {Object} params
    * @returns {Promise<{success: boolean, data: OrdemServico, message: string}>}
    */
   async update(params) {
-    const { id, descricao, status } = params;
-    const response = await this.patch(`/service-orders/${id}`, { descricao, status });
+    const id = params.id;
+    const body = {};
+    if (params.defeito !== undefined) body.defeito = params.defeito;
+    if (params.servicos !== undefined) body.servicos = params.servicos;
+    if (params.assinatura !== undefined) body.assinatura = params.assinatura;
+    if (params.status !== undefined) body.status = params.status;
+    if (params.valor !== undefined) body.valor = Number(params.valor);
+    if (params.produto_id !== undefined) body.produto_id = params.produto_id;
+    if (params.cliente_id !== undefined) body.cliente_id = params.cliente_id;
+
+    const response = await this.patch(`/service-orders/${id}`, body);
 
     if (response.success && response.data) {
       response.data = new OrdemServico(response.data);
@@ -85,26 +82,23 @@ export class ServiceOrderService extends HttpClient {
 
   /**
    * Deleta uma ordem de serviço
-   * 
-   * | Parâmetro | Tipo    | Descrição     |
-   * |-----------|---------|---------------|
-   * | id        | integer | ID da ordem   |
-   * 
-   * @param {number} id - ID da ordem de serviço
+   * @param {number} id
    * @returns {Promise<{success: boolean, data: null, message: string}>}
    */
-  async delete(id) {
+  async remove(id) {
     return this.delete(`/service-orders/${id}`);
   }
 
   /**
+   * Alias para compatibilidade
+   */
+  async delete(id) {
+    return this.remove(id);
+  }
+
+  /**
    * Lista ordens por cliente ID
-   * 
-   * | Parâmetro  | Tipo    | Descrição      |
-   * |------------|---------|----------------|
-   * | cliente_id | integer | ID do cliente  |
-   * 
-   * @param {number} cliente_id - ID do cliente
+   * @param {number} cliente_id
    * @returns {Promise<{success: boolean, data: OrdemServico[], message: string}>}
    */
   async listByClientId(cliente_id) {
@@ -119,12 +113,7 @@ export class ServiceOrderService extends HttpClient {
 
   /**
    * Lista ordens por nome do cliente
-   * 
-   * | Parâmetro   | Tipo   | Descrição       |
-   * |-------------|--------|-----------------|
-   * | client_name | string | Nome do cliente |
-   * 
-   * @param {string} client_name - Nome do cliente
+   * @param {string} client_name
    * @returns {Promise<{success: boolean, data: OrdemServico[], message: string}>}
    */
   async listByClientName(client_name) {

@@ -36,8 +36,12 @@ export class SaleService extends HttpClient {
    * @param {number} id - ID da venda
    * @returns {Promise<{success: boolean, data: null, message: string}>}
    */
-  async delete(id) {
+  async remove(id) {
     return this.delete(`/sales/${id}`);
+  }
+
+  async delete(id) {
+    return this.remove(id);
   }
 
   /**

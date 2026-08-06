@@ -1,7 +1,7 @@
 import { requireAuth, goBack, showToast, formatPhone } from '../app.js';
 import { bindMasks } from '../masks.js';
 import { Cliente } from '../../client/models/ClienteModel.js';
-import { ClientService } from '../../client/services/ClientService.js';
+import { ClientService } from '../../client/services/clientService.js';
 import { NotificationService } from '../../client/services/notificationService.js';
 
 window.NotificationService = NotificationService;
