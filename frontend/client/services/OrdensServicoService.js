@@ -10,7 +10,7 @@ export class ServiceOrderService extends HttpClient {
   async create(params) {
     const body = {
       cliente_id: params.cliente_id,
-      produto_id: params.produto_id || 0,
+      nome_servico: params.nome_servico || "",
       defeito: params.defeito,
       servicos: params.servicos,
       assinatura: params.assinatura || null,
@@ -68,7 +68,7 @@ export class ServiceOrderService extends HttpClient {
     if (params.assinatura !== undefined) body.assinatura = params.assinatura;
     if (params.status !== undefined) body.status = params.status;
     if (params.valor !== undefined) body.valor = Number(params.valor);
-    if (params.produto_id !== undefined) body.produto_id = params.produto_id;
+    if (params.nome_servico !== undefined) body.nome_servico = params.nome_servico;
     if (params.cliente_id !== undefined) body.cliente_id = params.cliente_id;
 
     const response = await this.patch(`/service-orders/${id}`, body);

@@ -147,6 +147,7 @@ CREATE TABLE ordens_servico (
     id BIGSERIAL PRIMARY KEY,
     numero_ordem BIGINT NOT NULL UNIQUE,
     cliente_id BIGINT NOT NULL,
+    nome_servico VARCHAR(255) NOT NULL,
     defeito TEXT,
     servicos TEXT,
     assinatura TEXT,

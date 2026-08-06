@@ -2,8 +2,8 @@ export class OrdemServico {
     constructor(data = {}) {
         this.id = data.id ?? 0;
         this.numero_ordem = data.numero_ordem ?? 0;
-        this.produto_id = data.produto_id ?? 0;
         this.cliente_id = data.cliente_id ?? 0;
+        this.nome_servico = data.nome_servico ?? "";
         this.defeito = data.defeito ?? null;
         this.servicos = data.servicos ?? null;
         this.assinatura = data.assinatura ?? null;
@@ -11,7 +11,6 @@ export class OrdemServico {
         this.valor = data.valor != null ? Number(data.valor) : 0;
         this.criado_em = data.criado_em ?? null;
         this.atualizado_em = data.atualizado_em ?? null;
-        // Campos auxiliares retornados pela API (join com cliente)
         this.cliente_nome = data.cliente_nome ?? data.nome_cliente ?? null;
         this.telefone = data.telefone ?? null;
     }
@@ -25,6 +24,10 @@ export class OrdemServico {
 
         if (!this.cliente_id) {
             erros.push("O cliente é obrigatório.");
+        }
+
+        if (!this.nome_servico || !String(this.nome_servico).trim()) {
+            erros.push("O nome do serviço é obrigatório.");
         }
 
         if (!this.defeito || !String(this.defeito).trim()) {

@@ -48,6 +48,12 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 		ordem.Status = "ABERTA"
 	}
 
+	// Força o nome do serviço a ficar em caixa alta
+	ordem.NomeServico = strings.ToUpper(strings.TrimSpace(ordem.NomeServico))
+	if ordem.NomeServico == "" {
+		return errors.New("nome do serviço é obrigatório")
+	}
+
 	tx, err := s.Pool.Begin(ctx)
 	if err != nil {
 		return err
