@@ -23,9 +23,6 @@ export class OrdemServico {
     validar() {
         const erros = [];
 
-        if (!this.cliente_id) {
-            erros.push("O cliente é obrigatório.");
-        }
 
         if (!this.defeito || !String(this.defeito).trim()) {
             erros.push("O defeito relatado é obrigatório.");

@@ -250,14 +250,15 @@
       <form id="form-os">
         <input type="hidden" id="os-id">
 
+        <!-- Campo único de identificação do cliente -->
         <div class="form-group">
-          <label for="os-cliente">Nome do cliente *</label>
-          <input type="text" id="os-cliente" placeholder="Nome completo" required>
+          <label for="os-telefone">Telefone do Cliente *</label>
+          <input type="tel" id="os-telefone" placeholder="(00) 00000-0000" required inputmode="tel" maxlength="15">
         </div>
 
         <div class="form-group">
-          <label for="os-telefone">Telefone *</label>
-          <input type="tel" id="os-telefone" placeholder="(00) 00000-0000" required inputmode="tel">
+          <label for="os-nome-servico">Nome do serviço *</label>
+          <input type="text" id="os-nome-servico" placeholder="Ex: MANUTENÇÃO DE SMARTPHONE" required style="text-transform: uppercase;">
         </div>
 
         <div class="form-group">
@@ -270,9 +271,10 @@
           <textarea id="os-servico" rows="2" placeholder="Ex: Troca de display, limpeza…" required></textarea>
         </div>
 
+        <!-- Campo de valor com tipo text e inputmode numérico para aplicar a máscara -->
         <div class="form-group">
           <label for="os-valor">Valor (R$)</label>
-          <input type="number" id="os-valor" placeholder="0,00" step="0.01" min="0" inputmode="decimal">
+          <input type="text" id="os-valor" placeholder="R$ 0,00" inputmode="numeric">
         </div>
 
         <div class="form-group" id="grupo-status" style="display:none">
@@ -312,5 +314,44 @@
   </div>
 
   <script type="module" src="../../js/pages/ordens.js"></script>
+
+ 
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const inputTelefone = document.getElementById('os-telefone');
+      const inputValor = document.getElementById('os-valor');
+
+      // Máscara de Telefone: (00) 00000-0000
+      if (inputTelefone) {
+        inputTelefone.addEventListener('input', (e) => {
+          let value = e.target.value.replace(/\D/g, '');
+          if (value.length > 11) value = value.slice(0, 11);
+
+          if (value.length > 6) {
+            value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+          } else if (value.length > 2) {
+            value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+          } else if (value.length > 0) {
+            value = `(${value}`;
+          }
+          e.target.value = value;
+        });
+      }
+
+      // Máscara de Preço em Real (R$)
+      if (inputValor) {
+        inputValor.addEventListener('input', (e) => {
+          let value = e.target.value.replace(/\D/g, '');
+          if (!value) {
+            e.target.value = '';
+            return;
+          }
+          const options = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+          const result = (parseFloat(value) / 100).toLocaleString('pt-BR', options);
+          e.target.value = `R$ ${result}`;
+        });
+      }
+    });
+  </script>
 </body>
 </html>

@@ -15,11 +15,6 @@ export class Cliente {
      */
     validar() {
         const erros = [];
-
-        if (!this.nome) {
-            erros.push("O nome do cliente é obrigatório.");
-        }
-
         if (this.email) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(this.email)) {

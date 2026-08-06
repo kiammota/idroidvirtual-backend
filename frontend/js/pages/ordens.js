@@ -24,6 +24,19 @@ let filtroAtual = 'andamento'; // 'andamento' | 'finalizadas'
 const STATUS_ANDAMENTO = ['ABERTA', 'EM_ANDAMENTO', 'AGUARDANDO_PECA'];
 const STATUS_FINALIZADAS = ['CONCLUIDA', 'ENTREGUE', 'CANCELADA'];
 
+// ─── Funções Auxiliares de Formatação ───────────────────
+function formatarMoeda(valor) {
+  if (!valor || isNaN(valor)) return '';
+  return `R$ ${Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function parseMoedaParaNumero(str) {
+  if (!str) return 0;
+  const digitos = str.replace(/\D/g, '');
+  if (!digitos) return 0;
+  return parseFloat(digitos) / 100;
+}
+
 // ─── Abas de filtro ─────────────────────────────────────
 document.querySelectorAll('#os-filter-tabs .tab').forEach((tab) => {
   tab.onclick = () => {
@@ -43,13 +56,17 @@ const formOS = document.getElementById('form-os');
 
 function preencherFormulario(dados) {
   document.getElementById('os-id').value = dados.id || '';
-  document.getElementById('os-cliente').value = dados.cliente_nome || dados.nome || '';
   document.getElementById('os-telefone').value = dados.telefone
     ? formatPhone(String(dados.telefone).replace(/\D/g, ''))
     : '';
+
+  const elNomeServico = document.getElementById('os-nome-servico');
+  if (elNomeServico) {
+    elNomeServico.value = (dados.nome_servico || '').toUpperCase();
+  }
+
   document.getElementById('os-defeito').value = dados.defeito || '';
 
-  // Extrai serviço e valor se estiver embutido em servicos
   let servicosTexto = dados.servicos || '';
   let valor = dados.valor != null ? Number(dados.valor) : 0;
 
@@ -60,7 +77,7 @@ function preencherFormulario(dados) {
   }
 
   document.getElementById('os-servico').value = servicosTexto;
-  document.getElementById('os-valor').value = valor > 0 ? valor : '';
+  document.getElementById('os-valor').value = valor > 0 ? formatarMoeda(valor) : '';
   document.getElementById('os-status').value = (dados.status || 'ABERTA').toUpperCase();
 
   // Assinatura
@@ -100,13 +117,11 @@ function abrirFormulario(modo = 'nova', dados = null) {
     formTitulo.textContent = 'Nova Ordem de Serviço';
     grupoStatus.style.display = 'none';
     btnSalvar.textContent = 'Salvar Ordem de Serviço';
-    document.getElementById('os-cliente').readOnly = false;
     document.getElementById('os-telefone').readOnly = false;
   } else {
     formTitulo.textContent = `Editar OS #${dados.numero_ordem || dados.id}`;
     grupoStatus.style.display = 'block';
     btnSalvar.textContent = 'Atualizar Ordem de Serviço';
-    document.getElementById('os-cliente').readOnly = true;
     document.getElementById('os-telefone').readOnly = true;
     preencherFormulario(dados);
   }
@@ -115,8 +130,8 @@ function abrirFormulario(modo = 'nova', dados = null) {
   setTimeout(() => {
     const first =
       modo === 'nova'
-        ? document.getElementById('os-cliente')
-        : document.getElementById('os-defeito');
+        ? document.getElementById('os-telefone')
+        : document.getElementById('os-nome-servico') || document.getElementById('os-defeito');
     first?.focus();
   }, 300);
 }
@@ -144,7 +159,7 @@ let osSelecionada = null;
 function abrirActionSheet(os) {
   osSelecionada = os;
   const num = os.numero_ordem || os.id;
-  asTitle.textContent = `OS #${num} · ${os.cliente_nome || ''}`;
+  asTitle.textContent = `OS #${num}${os.cliente_nome ? ' · ' + os.cliente_nome : ''}`;
 
   const status = (os.status || '').toUpperCase();
   const jaFinalizada = STATUS_FINALIZADAS.includes(status);
@@ -169,7 +184,6 @@ asEditar.onclick = async () => {
   const os = osSelecionada;
   fecharActionSheet();
 
-  // Tenta buscar dados completos por ID para garantir preenchimento
   try {
     const res = await serviceOrderService.getById(os.id);
     if (res.success && res.data) {
@@ -196,6 +210,7 @@ asFinalizar.onclick = async () => {
     const response = await serviceOrderService.update({
       id: os.id,
       status: 'CONCLUIDA',
+      nome_servico: os.nome_servico,
       defeito: os.defeito,
       servicos: os.servicos,
       assinatura: os.assinatura || null,
@@ -331,41 +346,20 @@ document.getElementById('os-telefone').addEventListener('blur', async () => {
   }
 });
 
-// ─── Resolver / criar cliente ───────────────────────────
-async function resolverCliente(nome, telefone) {
-  try {
-    const busca = await clientService.searchByPhone(telefone);
-    if (busca.success && Array.isArray(busca.data) && busca.data.length > 0) {
-      return busca.data[0];
-    }
-  } catch {
-    /* continua para criar */
-  }
-  const criado = await clientService.create({
-    nome,
-    telefone,
-    email: null,
-    endereco: null
-  });
-  if (!criado.success || !criado.data) {
-    throw new Error(criado.message || 'Não foi possível cadastrar o cliente');
-  }
-  return criado.data;
-}
-
 // ─── Submit do formulário ───────────────────────────────
 formOS.onsubmit = async (e) => {
   e.preventDefault();
 
-  const clienteNome = document.getElementById('os-cliente').value.trim();
   const telefone = document.getElementById('os-telefone').value.replace(/\D/g, '');
+  const nomeServico = (document.getElementById('os-nome-servico')?.value || '').trim().toUpperCase();
   const defeito = document.getElementById('os-defeito').value.trim();
   const servicos = document.getElementById('os-servico').value.trim();
-  const valor = parseFloat(document.getElementById('os-valor')?.value) || 0;
+  const valorInputStr = document.getElementById('os-valor')?.value || '';
+  const valor = parseMoedaParaNumero(valorInputStr);
   const assinatura = document.getElementById('os-assinatura').value || null;
   const statusSelecionado = document.getElementById('os-status')?.value || 'ABERTA';
 
-  if (!clienteNome || !telefone || !defeito || !servicos) {
+  if (!telefone || !nomeServico || !defeito || !servicos) {
     showToast('Preencha todos os campos obrigatórios', 'error');
     return;
   }
@@ -379,16 +373,14 @@ formOS.onsubmit = async (e) => {
 
   try {
     if (modoForm === 'nova') {
-      const cliente = await resolverCliente(clienteNome, telefone);
       const ordem = new OrdemServico({
-        cliente_id: cliente.id,
+        telefone,
+        nome_servico: nomeServico,
         defeito,
         servicos,
         assinatura,
         status: 'ABERTA',
-        valor,
-        cliente_nome: cliente.nome || clienteNome,
-        telefone
+        valor
       });
 
       const erros = ordem.validar();
@@ -408,6 +400,7 @@ formOS.onsubmit = async (e) => {
     } else {
       const payload = {
         id: document.getElementById('os-id').value,
+        nome_servico: nomeServico,
         defeito,
         servicos,
         assinatura,
@@ -467,13 +460,14 @@ function renderList(items) {
   el.innerHTML = items
     .map((os) => {
       const num = os.numero_ordem || os.id;
-      const nome = os.cliente_nome || `Cliente #${os.cliente_id}`;
+      const nome = os.cliente_nome || (os.telefone ? formatPhone(String(os.telefone).replace(/\D/g, '')) : `Cliente #${os.cliente_id}`);
       const tel = os.telefone ? formatPhone(String(os.telefone).replace(/\D/g, '')) : '';
-      const valorStr = os.valor > 0 ? ` · R$ ${Number(os.valor).toFixed(2).replace('.', ',')}` : '';
+      const valorStr = os.valor > 0 ? ` · ${formatarMoeda(os.valor)}` : '';
+      const nomeServicoStr = os.nome_servico ? ` · ${os.nome_servico}` : '';
       return `
       <div class="card list-item" data-id="${os.id}" style="flex-direction:column;align-items:stretch;gap:6px">
         <div class="flex justify-between items-center">
-          <span class="fw-bold">OS #${num}</span>
+          <span class="fw-bold">OS #${num}${nomeServicoStr}</span>
           <span class="badge ${badgeClass(os.status)}">${os.status || 'ABERTA'}</span>
         </div>
         <div class="title">${nome}</div>

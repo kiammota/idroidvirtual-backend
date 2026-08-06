@@ -22,9 +22,6 @@ export class OrdemServico {
     validar() {
         const erros = [];
 
-        if (!this.cliente_id) {
-            erros.push("O cliente é obrigatório.");
-        }
 
         if (!this.nome_servico || !String(this.nome_servico).trim()) {
             erros.push("O nome do serviço é obrigatório.");
