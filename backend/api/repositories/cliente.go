@@ -54,6 +54,92 @@ func (r *ClienteRepository) Criar(ctx context.Context, c *models.Cliente) error 
 	return nil
 }
 
+// BuscarPorTelefoneTx busca um cliente exatamente pelo número de telefone dentro de uma transação
+func (r *ClienteRepository) BuscarPorTelefoneTx(
+	ctx context.Context,
+	tx pgx.Tx,
+	telefone string,
+) (*models.Cliente, error) {
+
+	query := `
+		SELECT 
+			id,
+			nome,
+			telefone,
+			endereco,
+			email,
+			criado_em,
+			atualizado_em
+		FROM clientes
+		WHERE telefone = $1
+		FOR UPDATE
+	`
+
+	var c models.Cliente
+
+	err := tx.QueryRow(
+		ctx,
+		query,
+		telefone,
+	).Scan(
+		&c.ID,
+		&c.Nome,
+		&c.Telefone,
+		&c.Endereco,
+		&c.Email,
+		&c.CriadoEm,
+		&c.AtualizadoEm,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &c, nil
+}
+
+// CriarTx insere um novo cliente dentro de uma transação e popula seu ID e datas
+func (r *ClienteRepository) CriarTx(
+	ctx context.Context,
+	tx pgx.Tx,
+	c *models.Cliente,
+) error {
+
+	query := `
+		INSERT INTO clientes (
+			nome,
+			telefone,
+			endereco,
+			email
+		) VALUES (
+			$1, $2, $3, $4
+		)
+		RETURNING id, criado_em, atualizado_em
+	`
+
+	err := tx.QueryRow(
+		ctx,
+		query,
+		c.Nome,
+		c.Telefone,
+		c.Endereco,
+		c.Email,
+	).Scan(
+		&c.ID,
+		&c.CriadoEm,
+		&c.AtualizadoEm,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // BuscarPorID retorna um cliente pelo ID
 func (r *ClienteRepository) BuscarPorID(ctx context.Context, id int64) (*models.Cliente, error) {
 

@@ -40,10 +40,6 @@ func NewOrdensServicoService(
 
 // POST /service-orders
 func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemServico) (err error) {
-	if ordem.ClienteID <= 0 {
-		return errors.New("cliente obrigatório")
-	}
-
 	if ordem.Status == "" {
 		ordem.Status = "ABERTA"
 	}
@@ -64,28 +60,70 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 		}
 	}()
 
-	cliente, err := s.ClienteRepo.BuscarPorIDTx(ctx, tx, ordem.ClienteID)
-	if err != nil {
-		return err
-	}
-	if cliente == nil {
-		return errors.New("cliente não encontrado")
+	var cliente *models.Cliente
+
+	// 1. Tenta buscar o cliente existente pelo telefone
+	telefoneLimpo := apenasNumeros(ordem.ClienteTelefone)
+	if telefoneLimpo != "" {
+		cliente, err = s.ClienteRepo.BuscarPorTelefoneTx(ctx, tx, telefoneLimpo)
+		if err != nil {
+			return err
+		}
 	}
 
-	// Busca a quantidade atual de ordens em andamento dentro da transação
+	// 2. Se não encontrou o cliente pelo telefone, cria um novo
+	if cliente == nil {
+
+		// Prepara o ponteiro para o Telefone (se a string não for vazia)
+		var telPtr *string
+		if telefoneLimpo != "" {
+			telPtr = &telefoneLimpo
+		}
+
+		// Prepara o ponteiro para o Endereço padrão
+		enderecoPadrao := "NÃO INFORMADO"
+
+		novoCliente := &models.Cliente{
+			Nome:     "NÃO INFORMADO",
+			Telefone: telPtr,
+			Endereco: &enderecoPadrao,
+		}
+
+		// Cria o cliente no banco dentro da transação (retornando o ID gerado)
+		if err = s.ClienteRepo.CriarTx(ctx, tx, novoCliente); err != nil {
+			return err
+		}
+
+		cliente = novoCliente
+	}
+
+	// 3. Pega o ID do cliente (seja ele existente ou recém-criado) e insere na ordem
+	ordem.ClienteID = cliente.ID
+
+	// 4. Busca a quantidade atual de ordens em andamento e gera o número da OS
 	emAndamento, err := s.OrdensServicoRepo.ContarEmAndamentoTx(ctx, tx)
 	if err != nil {
 		return err
 	}
-
-	// Define o número da nova ordem (ex: quantidade atual + 1)
 	ordem.NumeroOrdem = int64(emAndamento + 1)
 
+	// 5. Salva a Ordem de Serviço com o ClienteID preenchido
 	if err = s.OrdensServicoRepo.CriarTx(ctx, tx, ordem); err != nil {
 		return err
 	}
 
 	return tx.Commit(ctx)
+}
+
+// Função auxiliar para remover máscara/caracteres do telefone
+func apenasNumeros(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if r >= '0' && r <= '9' {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 // GET /service-orders
