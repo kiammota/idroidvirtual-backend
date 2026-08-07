@@ -39,7 +39,6 @@ func (c *VendasController) Create(ctx *gin.Context) {
 	venda, err := c.vendaService.ExecutarVenda(
 		ctx.Request.Context(),
 		input.UsuarioID,
-		input.ClienteID,
 		input.ProdutoID,
 		input.Quantidade,
 		input.TipoPagamento,

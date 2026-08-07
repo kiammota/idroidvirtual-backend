@@ -119,7 +119,6 @@ func (s *VendaService) ObterVendasDoMes(ctx context.Context) ([]models.Venda, er
 func (s *VendaService) ExecutarVenda(
 	ctx context.Context,
 	usuarioID int64,
-	clienteID int64, // 0 = Consumidor Final
 	produtoID int64,
 	quantidade int,
 	tipoPagamento string,
@@ -158,17 +157,6 @@ func (s *VendaService) ExecutarVenda(
 
 	// 3. Cliente (opcional)
 	clienteInfo := "para Consumidor Final"
-	if clienteID > 0 {
-		cliente, err := s.clienteRepo.BuscarPorIDTx(ctx, tx, clienteID)
-		if err == nil && cliente != nil {
-			switch {
-			case cliente.Nome != "":
-				clienteInfo = fmt.Sprintf("para o cliente %s", cliente.Nome)
-			case cliente.Telefone != nil && *cliente.Telefone != "":
-				clienteInfo = fmt.Sprintf("para o cliente com o número %s", *cliente.Telefone)
-			}
-		}
-	}
 
 	// 4. Baixa de estoque
 	if err := s.produtoRepo.DiminuirEstoqueTx(ctx, tx, produtoID, quantidade); err != nil {
@@ -180,7 +168,6 @@ func (s *VendaService) ExecutarVenda(
 	venda := &models.Venda{
 		ProdutoID:     produtoID,
 		UsuarioID:     usuarioID,
-		ClienteID:     clienteID, // 0 = sem cliente
 		Quantidade:    quantidade,
 		Total:         valorTotal,
 		TipoPagamento: tipoPagamento,
@@ -205,7 +192,6 @@ func (s *VendaService) ExecutarVenda(
 		ctx, tx, usuarioID, acaoTexto, "vendas", venda.ID, nil,
 		map[string]interface{}{
 			"produto_id":     produtoID,
-			"cliente_id":     clienteID,
 			"quantidade":     quantidade,
 			"total":          valorTotal,
 			"tipo_pagamento": tipoPagamento,

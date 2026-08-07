@@ -102,7 +102,6 @@ CREATE TABLE vendas (
     id BIGSERIAL PRIMARY KEY,
     produto_id BIGINT NOT NULL,
     usuario_id BIGINT NOT NULL,
-    cliente_id BIGINT,
     quantidade INTEGER NOT NULL DEFAULT 1,
     
     -- Campos Financeiros da Venda
@@ -122,7 +121,6 @@ CREATE TABLE vendas (
     -- Constraints / Chaves Estrangeiras
     CONSTRAINT fk_venda_produto FOREIGN KEY(produto_id) REFERENCES produtos(id) ON DELETE RESTRICT,
     CONSTRAINT fk_venda_usuario FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_venda_cliente FOREIGN KEY(cliente_id) REFERENCES clientes(id) ON DELETE SET NULL
 );
 
 CREATE TABLE trocas (
