@@ -1,76 +1,50 @@
 import { HttpClient } from "../http.js";
-import { Venda } from "../models/VendaModel.js"; // Ajuste o caminho conforme a estrutura do seu projeto
+import { Venda } from "../models/VendaModel.js";
 
-export class SaleService extends HttpClient {
+class SaleServiceClass extends HttpClient {
   /**
    * Cria uma venda
-   * 
-   * | Parâmetro      | Tipo    | Descrição          |
-   * |----------------|---------|-------------------|
-   * | cliente_id     | integer | ID do cliente      |
-   * | produto_id     | integer | ID do produto      |
-   * | quantidade     | integer | Quantidade         |
-   * | preco_unitario | number  | Preço unitário     |
-   * 
-   * @param {Object} params
-   * @returns {Promise<{success: boolean, data: Venda, message: string}>}
+   * OpenAPI: produto_id, quantidade, tipo_pagamento (obrigatórios); cliente_id opcional (0 = Consumidor Final)
    */
   async create(params) {
-    const { cliente_id, produto_id, quantidade, preco_unitario } = params;
-    const response = await this.post('/sales', { cliente_id, produto_id, quantidade, preco_unitario });
-
+    const body = {
+      produto_id: Number(params.produto_id),
+      quantidade: Number(params.quantidade) || 1,
+      tipo_pagamento: params.tipo_pagamento || "PIX",
+      cliente_id: params.cliente_id != null ? Number(params.cliente_id) : 0,
+    };
+    const response = await this.post("/sales", body);
     if (response.success && response.data) {
       response.data = new Venda(response.data);
     }
-
     return response;
   }
 
-  /**
-   * Deleta uma venda
-   * 
-   * | Parâmetro | Tipo    | Descrição   |
-   * |-----------|---------|-------------|
-   * | id        | integer | ID da venda |
-   * 
-   * @param {number} id - ID da venda
-   * @returns {Promise<{success: boolean, data: null, message: string}>}
-   */
   async remove(id) {
     return this.delete(`/sales/${id}`);
   }
 
-  async delete(id) {
+  async deleteSale(id) {
     return this.remove(id);
   }
 
-  /**
-   * Lista vendas do dia
-   * 
-   * @returns {Promise<{success: boolean, data: Venda[], message: string}>}
-   */
   async getByDay() {
-    const response = await this.get('/sales/dia');
-
+    const response = await this.get("/sales/dia");
     if (response.success && Array.isArray(response.data)) {
-      response.data = response.data.map(data => new Venda(data));
+      response.data = response.data.map((data) => new Venda(data));
     }
-
     return response;
   }
 
-  /**
-   * Lista vendas do mês
-   * 
-   * @returns {Promise<{success: boolean, data: Venda[], message: string}>}
-   */
   async getByMonth() {
-    const response = await this.get('/sales/mes');
-
+    const response = await this.get("/sales/mes");
     if (response.success && Array.isArray(response.data)) {
-      response.data = response.data.map(data => new Venda(data));
+      response.data = response.data.map((data) => new Venda(data));
     }
-
     return response;
   }
 }
+
+/** Singleton */
+export const SaleService = new SaleServiceClass();
+export default SaleService;

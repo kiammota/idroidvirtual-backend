@@ -74,9 +74,9 @@ ON produtos(estoque);
 CREATE TABLE clientes (
     id BIGSERIAL PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
-    telefone VARCHAR(30),
+    telefone VARCHAR(30) UNIQUE,
     endereco TEXT,
-    email VARCHAR(255),
+    email VARCHAR(255) UNIQUE,
     criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
     atualizado_em TIMESTAMP NOT NULL DEFAULT NOW()
 );

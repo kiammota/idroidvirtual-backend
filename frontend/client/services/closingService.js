@@ -1,21 +1,15 @@
 import { HttpClient } from "../http.js";
 
-export class ClosingService extends HttpClient {
-  /**
-   * Fechamento do dia
-   * 
-   * @returns {Promise<{success: boolean, data: Object, message: string}>}
-   */
+class ClosingServiceClass extends HttpClient {
   async getByDay() {
-    return this.get('/closing/dia');
+    return this.get("/closing/dia");
   }
 
-  /**
-   * Fechamento do mês
-   * 
-   * @returns {Promise<{success: boolean, data: Object, message: string}>}
-   */
   async getByMonth() {
-    return this.get('/closing/mes');
+    return this.get("/closing/mes");
   }
 }
+
+/** Singleton */
+export const ClosingService = new ClosingServiceClass();
+export default ClosingService;

@@ -6,101 +6,115 @@ import { NotificationService } from '../../client/services/notificationService.j
 
 window.NotificationService = NotificationService;
 
-if (!requireAuth()) throw new Error('redirect');
-document.getElementById('btn-back').onclick = () => goBack();
+/**
+ * Página de Clientes
+ */
+async function init() {
+  if (!requireAuth()) return;
 
-bindMasks({ 'cli-telefone': 'phone' });
+  document.getElementById('btn-back').onclick = () => goBack();
+  bindMasks({ 'cli-telefone': 'phone' });
 
-const clientService = new ClientService();
-let clientes = [];
+  let clientes = [];
 
-// Controle de abas
-document.querySelectorAll('#cli-tabs .tab').forEach(tab => {
-  tab.onclick = () => {
-    document.querySelectorAll('#cli-tabs .tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('tab-lista').classList.toggle('hidden', tab.dataset.tab !== 'lista');
-    document.getElementById('tab-novo').classList.toggle('hidden', tab.dataset.tab !== 'novo');
-  };
-});
+  // Controle de abas
+  document.querySelectorAll('#cli-tabs .tab').forEach((tab) => {
+    tab.onclick = () => {
+      document.querySelectorAll('#cli-tabs .tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-lista').classList.toggle('hidden', tab.dataset.tab !== 'lista');
+      document.getElementById('tab-novo').classList.toggle('hidden', tab.dataset.tab !== 'novo');
+    };
+  });
 
-// Renderização da lista de clientes
-function render(list) {
-  const el = document.getElementById('cli-list');
-  if (!list || !list.length) {
-    el.innerHTML = `<div class="empty-state"><div class="icon">👥</div><p>Nenhum cliente encontrado.</p></div>`;
-    return;
-  }
-  el.innerHTML = list.map(c => `
-    <div class="card list-item">
-      <div class="info">
-        <div class="title">${c.nome}</div>
-        <div class="sub">${formatPhone(c.telefone) || '—'} ${c.endereco ? '· ' + c.endereco : ''}</div>
+  function render(list) {
+    const el = document.getElementById('cli-list');
+    if (!list || !list.length) {
+      el.innerHTML = `<div class="empty-state"><div class="icon">👥</div><p>Nenhum cliente encontrado.</p></div>`;
+      return;
+    }
+    el.innerHTML = list
+      .map(
+        (c) => `
+      <div class="card list-item">
+        <div class="info">
+          <div class="title">${c.nome}</div>
+          <div class="sub">${formatPhone(c.telefone) || '—'} ${c.endereco ? '· ' + c.endereco : ''}</div>
+        </div>
       </div>
-    </div>
-  `).join('');
-}
-
-// Busca local na lista atual
-document.getElementById('busca-cliente').oninput = (e) => {
-  const q = e.target.value.toLowerCase().trim();
-  if (!q) return render(clientes);
-  render(clientes.filter(c =>
-    (c.nome || '').toLowerCase().includes(q) ||
-    (c.telefone || '').includes(q.replace(/\D/g, '')) ||
-    (c.email || '').toLowerCase().includes(q)
-  ));
-};
-
-// Cadastro via API (ClientService.create)
-document.getElementById('form-cliente').onsubmit = async (e) => {
-  e.preventDefault();
-  
-  const nome = document.getElementById('cli-nome').value;
-  const telefone = document.getElementById('cli-telefone').value;
-  const endereco = document.getElementById('cli-endereco').value;
-  const email = document.getElementById('cli-email').value;
-
-  const model = new Cliente({ nome, telefone, endereco, email });
-
-  if (!model.isValid()) {
-    showToast(model.validar()[0], 'error');
-    return;
+    `
+      )
+      .join('');
   }
 
-  try {
-    const response = await clientService.create({ nome, telefone, endereco, email });
-    
-    if (response.success) {
-      showToast('Cliente cadastrado com sucesso', 'success');
-      document.getElementById('form-cliente').reset();
-      
-      await carregarClientes();
-      document.querySelector('[data-tab="lista"]').click();
-    } else {
-      showToast(response.message || 'Erro ao cadastrar cliente', 'error');
+  // Busca local na lista atual
+  document.getElementById('busca-cliente').oninput = (e) => {
+    const q = e.target.value.toLowerCase().trim();
+    if (!q) return render(clientes);
+    render(
+      clientes.filter(
+        (c) =>
+          (c.nome || '').toLowerCase().includes(q) ||
+          (c.telefone || '').includes(q.replace(/\D/g, '')) ||
+          (c.email || '').toLowerCase().includes(q)
+      )
+    );
+  };
+
+  // Cadastro via API
+  document.getElementById('form-cliente').onsubmit = async (e) => {
+    e.preventDefault();
+
+    const nome = document.getElementById('cli-nome').value;
+    const telefone = document.getElementById('cli-telefone').value;
+    const endereco = document.getElementById('cli-endereco').value;
+    const email = document.getElementById('cli-email').value;
+
+    const model = new Cliente({ nome, telefone, endereco, email });
+    if (!model.isValid()) {
+      showToast(model.validar()[0], 'error');
+      return;
     }
-  } catch (err) {
-    showToast(err.message || 'Erro de conexão ao cadastrar cliente', 'error');
-  }
-};
 
-// Busca lista completa via API (ClientService.listAll)
-async function carregarClientes() {
-  try {
-    const response = await clientService.listAll();
-    if (response.success && Array.isArray(response.data)) {
-      clientes = response.data;
-    } else {
+    try {
+      const response = await ClientService.create({ nome, telefone, endereco, email });
+
+      if (response.success) {
+        showToast('Cliente cadastrado com sucesso', 'success');
+        document.getElementById('form-cliente').reset();
+        await carregarClientes();
+        document.querySelector('[data-tab="lista"]').click();
+      } else {
+        showToast(response.message || 'Erro ao cadastrar cliente', 'error');
+      }
+    } catch (err) {
+    console.error('Erro ao criar cliente:', err);
+    console.error('Mensagem:', err.message);
+
+    showToast(
+        err.message || 'Erro de conexão ao cadastrar cliente',
+        'error'
+    );
+}
+  };
+
+  async function carregarClientes() {
+    try {
+      const response = await ClientService.listAll();
+      if (response.success && Array.isArray(response.data)) {
+        clientes = response.data;
+      } else {
+        clientes = [];
+      }
+    } catch (err) {
+      showToast('Erro ao carregar clientes', 'error');
       clientes = [];
+    } finally {
+      render(clientes);
     }
-  } catch (err) {
-    showToast('Erro ao carregar clientes', 'error');
-    clientes = [];
-  } finally {
-    render(clientes);
   }
+
+  await carregarClientes();
 }
 
-// Inicialização
-carregarClientes();
+init();

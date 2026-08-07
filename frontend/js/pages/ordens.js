@@ -7,13 +7,18 @@ import { OrdemServico } from '../../client/models/OrdemServicoModel.js';
 
 window.NotificationService = NotificationService;
 
-if (!requireAuth()) throw new Error('redirect');
+/**
+ * Página de Ordens de Serviço
+ */
+async function init() {
+if (!requireAuth()) return;
 
 document.getElementById('btn-back').onclick = () => goBack();
 bindMasks({ 'os-telefone': 'phone' });
 
-const clientService = new ClientService();
-const serviceOrderService = new ServiceOrderService();
+// Singletons — sem new
+const clientService = ClientService;
+const serviceOrderService = ServiceOrderService;
 
 // ─── Estado ─────────────────────────────────────────────
 let modoForm = 'nova';
@@ -558,3 +563,7 @@ async function carregarOrdensServico() {
 // ─── Inicialização ──────────────────────────────────────
 setupAssinatura();
 carregarOrdensServico();
+
+} // end init
+
+init();

@@ -4,6 +4,7 @@
  */
 
 import { TOKEN_STORAGE_KEY, API_BASE_URL } from '../client/env.js';
+import { UserService } from '../client/services/UsuarioService.js';
 
 /** Base relativa: sempre sobe para /pages/ a partir de qualquer subpasta */
 export function pagesBase() {
@@ -134,14 +135,22 @@ export function requestPin(title = 'Área protegida') {
       resolve(result);
     };
 
-    document.getElementById('pin-confirm').onclick = () => {
+    document.getElementById('pin-confirm').onclick = async () => {
       const pin = input.value.trim();
-      // CHAMADA DA API AQUI — validar PIN/senha administrativa
-      if (pin.length >= 4) {
-        showToast('Acesso liberado', 'success');
-        cleanup(true);
-      } else {
+      if (pin.length < 4) {
         showToast('PIN inválido', 'error');
+        return;
+      }
+      try {
+        const res = await UserService.elevate(pin);
+        if (res.success) {
+          showToast('Acesso liberado', 'success');
+          cleanup(true);
+        } else {
+          showToast(res.message || 'Senha administrativa inválida', 'error');
+        }
+      } catch (err) {
+        showToast(err.message || 'Erro ao validar PIN', 'error');
       }
     };
     document.getElementById('pin-cancel').onclick = () => cleanup(false);

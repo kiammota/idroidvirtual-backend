@@ -21,12 +21,43 @@
       <button class="tab" data-tab="brindes">Brindes</button>
     </div>
 
+    <!-- TAB PRODUTOS -->
     <section id="tab-produtos">
+      <!-- Grid de categorias (estilo Home) -->
+      <div class="grid-cards animate-in" id="cat-grid">
+        <button class="grid-card" data-categoria="CELULAR">
+          <span class="icon">📱</span>
+          <span class="label">Celulares</span>
+          <span class="sub" id="count-CELULAR">0 itens</span>
+        </button>
+        <button class="grid-card" data-categoria="ACESSORIO">
+          <span class="icon">🎧</span>
+          <span class="label">Acessórios</span>
+          <span class="sub" id="count-ACESSORIO">0 itens</span>
+        </button>
+        <button class="grid-card" data-categoria="PECA">
+          <span class="icon">🔧</span>
+          <span class="label">Peças</span>
+          <span class="sub" id="count-PECA">0 itens</span>
+        </button>
+        <button class="grid-card" data-categoria="OUTRO">
+          <span class="icon">📦</span>
+          <span class="label">Outros</span>
+          <span class="sub" id="count-OUTRO">0 itens</span>
+        </button>
+      </div>
+
+      <!-- Lista de produtos da categoria selecionada -->
+      <div id="est-list-header" class="card-title mt-2" style="display:none;">
+        <span id="cat-title">Produtos</span>
+        <button class="btn btn-outline btn-sm" id="btn-voltar-cats" style="float:right;font-size:0.8rem">← Categorias</button>
+      </div>
       <div id="est-list">
-        <div class="empty-state"><div class="icon">📦</div><p>Estoque vazio.</p></div>
+        <div class="empty-state"><div class="icon">📦</div><p>Selecione uma categoria acima.</p></div>
       </div>
     </section>
 
+    <!-- TAB ENTRADA -->
     <section id="tab-entrada" class="hidden">
       <form id="form-entrada">
         <div class="form-group">
@@ -35,16 +66,12 @@
         </div>
         <div class="form-group">
           <label for="ent-categoria">Categoria *</label>
-          <select id="ent-categoria">
+          <select id="ent-categoria" required>
             <option value="CELULAR">Celular</option>
             <option value="ACESSORIO">Acessório</option>
             <option value="PECA">Peça</option>
             <option value="OUTRO">Outro</option>
           </select>
-        </div>
-        <div class="form-group">
-          <label for="ent-imei">IMEI (obrigatório p/ celular)</label>
-          <input type="text" id="ent-imei" maxlength="15" inputmode="numeric" placeholder="15 dígitos">
         </div>
         <div class="form-group">
           <label for="ent-preco">Preço (R$)</label>
@@ -58,6 +85,7 @@
       </form>
     </section>
 
+    <!-- TAB BRINDES -->
     <section id="tab-brindes" class="hidden">
       <p class="text-muted mb-2" style="font-size:0.9rem">Controle de perdas operacionais e saída de brindes.</p>
       <form id="form-brinde">
@@ -82,7 +110,6 @@
     </section>
   </main>
 
-  
   <script type="module" src="../../js/pages/estoque.js"></script>
 </body>
 </html>

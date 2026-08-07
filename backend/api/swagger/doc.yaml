@@ -696,6 +696,66 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /trocas:
+    post:
+      tags: [Trocas]
+      operationId: createTroca
+      summary: Cria uma troca vinculada a uma venda
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrocaCreate'
+      responses:
+        '201':
+          $ref: '#/components/responses/TrocaEnvelopeCreated'
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '422':
+          description: Dados da troca inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+
+  /trocas/venda/{vendaId}:
+    get:
+      tags: [Trocas]
+      operationId: getTradeBySaleId
+      summary: Busca a troca vinculada a uma venda
+      parameters:
+        - name: vendaId
+          in: path
+          required: true
+          description: ID da venda
+          schema:
+            type: integer
+            format: int64
+            example: 1001
+      responses:
+        '200':
+          $ref: '#/components/responses/TrocaEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Nenhuma troca encontrada para a venda
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -923,6 +983,43 @@ components:
           type: boolean
         message:
           type: string
+
+  TrocaCreate:
+  type: object
+  required:
+    - venda_id
+    - modelo_aparelho
+    - imei
+    - valor_avaliacao
+
+  properties:
+
+    venda_id:
+      type: integer
+      format: int64
+      example: 123
+
+    modelo_aparelho:
+      type: string
+      example: iPhone 13 Pro
+
+    imei:
+      type: string
+      example: "356789123456789"
+
+    valor_avaliacao:
+      type: number
+      format: double
+      example: 1500.00
+
+    condicao:
+      type: string
+      example: USADO
+
+    observacoes:
+      type: string
+      nullable: true
+      example: "Aparelho funcionando perfeitamente"
 
     LoginRequest:
       type: object
