@@ -7,25 +7,30 @@ export class ServiceOrderService extends HttpClient {
    * @param {Object|OrdemServico} params
    * @returns {Promise<{success: boolean, data: OrdemServico, message: string}>}
    */
-  async create(params) {
-    const body = {
-      cliente_id: params.cliente_id,
-      nome_servico: params.nome_servico || "",
-      defeito: params.defeito,
-      servicos: params.servicos,
-      assinatura: params.assinatura || null,
-      status: params.status || "ABERTA",
-      valor: params.valor != null ? Number(params.valor) : 0
-    };
-    const response = await this.post('/service-orders', body);
+  /**
+ * Cria uma ordem de serviço
+ * @param {Object|OrdemServico} params
+ * @returns {Promise<{success: boolean, data: OrdemServico, message: string}>}
+ */
+async create(params) {
+  const body = {
+    cliente_id: params.cliente_id,
+    telefone: params.telefone, // <-- ADICIONE ESTA LINHA AQUI
+    nome_servico: params.nome_servico || "",
+    defeito: params.defeito,
+    servicos: params.servicos,
+    assinatura: params.assinatura || null,
+    status: params.status || "ABERTA",
+    valor: params.valor != null ? Number(params.valor) : 0
+  };
+  const response = await this.post('/service-orders', body);
 
-    if (response.success && response.data) {
-      response.data = new OrdemServico(response.data);
-    }
-
-    return response;
+  if (response.success && response.data) {
+    response.data = new OrdemServico(response.data);
   }
 
+  return response;
+}
   /**
    * Lista todas as ordens de serviço
    * @returns {Promise<{success: boolean, data: OrdemServico[], message: string}>}
@@ -61,24 +66,25 @@ export class ServiceOrderService extends HttpClient {
    * @returns {Promise<{success: boolean, data: OrdemServico, message: string}>}
    */
   async update(params) {
-    const id = params.id;
-    const body = {};
-    if (params.defeito !== undefined) body.defeito = params.defeito;
-    if (params.servicos !== undefined) body.servicos = params.servicos;
-    if (params.assinatura !== undefined) body.assinatura = params.assinatura;
-    if (params.status !== undefined) body.status = params.status;
-    if (params.valor !== undefined) body.valor = Number(params.valor);
-    if (params.nome_servico !== undefined) body.nome_servico = params.nome_servico;
-    if (params.cliente_id !== undefined) body.cliente_id = params.cliente_id;
+  const id = params.id;
+  const body = {};
+  if (params.defeito !== undefined) body.defeito = params.defeito;
+  if (params.servicos !== undefined) body.servicos = params.servicos;
+  if (params.assinatura !== undefined) body.assinatura = params.assinatura;
+  if (params.status !== undefined) body.status = params.status;
+  if (params.valor !== undefined) body.valor = Number(params.valor);
+  if (params.nome_servico !== undefined) body.nome_servico = params.nome_servico;
+  if (params.cliente_id !== undefined) body.cliente_id = params.cliente_id;
+  if (params.telefone !== undefined) body.telefone = params.telefone; // <-- Adicione esta linha
 
-    const response = await this.patch(`/service-orders/${id}`, body);
+  const response = await this.patch(`/service-orders/${id}`, body);
 
-    if (response.success && response.data) {
-      response.data = new OrdemServico(response.data);
-    }
-
-    return response;
+  if (response.success && response.data) {
+    response.data = new OrdemServico(response.data);
   }
+
+  return response;
+}
 
   /**
    * Deleta uma ordem de serviço

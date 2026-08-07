@@ -6,9 +6,10 @@ type OrdemServico struct {
 	ID              int64     `json:"id"`
 	NumeroOrdem     int64     `json:"numero_ordem"`
 	NomeServico     string    `json:"nome_servico"`
-	Valor           int64     `json:"valor"`
+	Valor           float64   `json:"valor"` // Geralmente float64 para representar moeda/decimais
 	ClienteID       int64     `json:"cliente_id"`
-	ClienteTelefone string    `json:"telefone"`
+	ClienteTelefone string    `json:"telefone"`          // Util para o payload do formulário
+	Cliente         *Cliente  `json:"cliente,omitempty"` // Ponteiro para trazer os dados completos do cliente
 	Defeito         *string   `json:"defeito,omitempty"`
 	Servicos        *string   `json:"servicos,omitempty"`
 	Assinatura      *string   `json:"assinatura,omitempty"`

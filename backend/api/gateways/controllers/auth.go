@@ -54,29 +54,6 @@ func (c *AuthController) UsuarioLogar(ctx *gin.Context) {
 		return
 	}
 
-	err = c.AuditoriaRepo.Criar(
-		ctx,
-		models.Auditoria{
-			UsuarioID:  response.Usuario.ID,
-			Acao:       "LOGIN",
-			Tabela:     "usuarios",
-			RegistroID: response.Usuario.ID,
-
-			ValoresNovos: map[string]interface{}{
-				"email": response.Usuario.Email,
-			},
-		},
-	)
-
-	if err != nil {
-		gateways.Error(
-			ctx,
-			http.StatusInternalServerError,
-			"erro ao registrar auditoria",
-		)
-		return
-	}
-
 	gateways.Success(
 		ctx,
 		http.StatusOK,

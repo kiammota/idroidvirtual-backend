@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"backend/models"
@@ -40,6 +41,10 @@ func NewOrdensServicoService(
 
 // POST /service-orders
 func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemServico) (err error) {
+	if ordem == nil {
+		return errors.New("ordem de serviço inválida")
+	}
+
 	if ordem.Status == "" {
 		ordem.Status = "ABERTA"
 	}
@@ -49,61 +54,66 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 		return errors.New("nome do serviço é obrigatório")
 	}
 
+	// 1. Extrai o telefone de forma segura (sem dar panic se ordem.Cliente for nil)
+	var telefoneBruto string
+	if ordem.ClienteTelefone != "" {
+		telefoneBruto = ordem.ClienteTelefone
+	} else if ordem.Cliente != nil && ordem.Cliente.Telefone != nil {
+		telefoneBruto = *ordem.Cliente.Telefone
+	}
+
+	telefoneLimpo := apenasNumeros(telefoneBruto)
+	if telefoneLimpo == "" {
+		return errors.New("telefone do cliente é obrigatório")
+	}
+
+	// 2. Inicia transação
 	tx, err := s.Pool.Begin(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("erro ao iniciar transação: %w", err)
 	}
+
 	defer func() {
 		if err != nil {
 			_ = tx.Rollback(ctx)
 		}
 	}()
 
-	var cliente *models.Cliente
-
-	// 1. Busca cliente por telefone
-	telefoneLimpo := apenasNumeros(ordem.ClienteTelefone)
-	if telefoneLimpo != "" {
-		cliente, err = s.ClienteRepo.BuscarPorTelefoneTx(ctx, tx, telefoneLimpo)
-		if err != nil {
-			return err
-		}
+	// 3. Busca cliente existente ou cria um novo
+	cliente, err := s.ClienteRepo.BuscarPorTelefoneTx(ctx, tx, telefoneLimpo)
+	if err != nil {
+		return fmt.Errorf("erro ao buscar cliente: %w", err)
 	}
 
-	// 2. Cria cliente se não existir
 	if cliente == nil {
-		var telPtr *string
-		if telefoneLimpo != "" {
-			telPtr = &telefoneLimpo
-		}
-
 		enderecoPadrao := "NÃO INFORMADO"
-
 		novoCliente := &models.Cliente{
 			Nome:     "NÃO INFORMADO",
-			Telefone: telPtr,
+			Telefone: &telefoneLimpo,
 			Endereco: &enderecoPadrao,
 		}
 
 		if err = s.ClienteRepo.CriarTx(ctx, tx, novoCliente); err != nil {
-			return err
+			return fmt.Errorf("erro ao criar cliente: %w", err)
 		}
 
 		cliente = novoCliente
 	}
 
-	// 3. Associa o ID do cliente
+	// 4. Vincula o ID do cliente encontrado/criado na ordem
 	ordem.ClienteID = cliente.ID
 
-	// REMOVIDO: Não calcule ordem.NumeroOrdem no Go!
-	// Deixe o campo zerado ou omita no INSERT para o PostgreSQL usar a SEQUENCE.
-
-	// 4. Salva a Ordem de Serviço (A query SQL deve usar RETURNING numero_ordem)
+	// 5. Salva a Ordem de Serviço
 	if err = s.OrdensServicoRepo.CriarTx(ctx, tx, ordem); err != nil {
-		return err
+		return fmt.Errorf("erro ao salvar ordem de serviço: %w", err)
 	}
 
-	return tx.Commit(ctx)
+	// 6. Confirma transação
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("erro ao confirmar transação: %w", err)
+	}
+
+	return nil
 }
 
 // Função auxiliar para remover máscara/caracteres do telefone
