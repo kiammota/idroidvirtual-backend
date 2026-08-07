@@ -3,6 +3,7 @@ import { bindMasks } from '../masks.js';
 import { Cliente } from '../../client/models/ClienteModel.js';
 import { ClientService } from '../../client/services/clientService.js';
 import { NotificationService } from '../../client/services/notificationService.js';
+import { openInspect } from '../components/InspectModal.js';
 
 window.NotificationService = NotificationService;
 
@@ -17,7 +18,6 @@ async function init() {
 
   let clientes = [];
 
-  // Controle de abas
   document.querySelectorAll('#cli-tabs .tab').forEach((tab) => {
     tab.onclick = () => {
       document.querySelectorAll('#cli-tabs .tab').forEach((t) => t.classList.remove('active'));
@@ -26,6 +26,26 @@ async function init() {
       document.getElementById('tab-novo').classList.toggle('hidden', tab.dataset.tab !== 'novo');
     };
   });
+
+  function abrirInspectCliente(c) {
+    const criado = c.criado_em
+      ? new Date(c.criado_em).toLocaleString('pt-BR')
+      : '—';
+
+    openInspect({
+      title: 'Cliente',
+      subtitle: 'IDroid Virtual',
+      fields: [
+        { label: 'ID', value: `#${c.id}` },
+        { label: 'Nome', value: c.nome || '—' },
+        { label: 'Telefone', value: formatPhone(c.telefone) || '—' },
+        { label: 'E-mail', value: c.email || '—' },
+        { label: 'Endereço', value: c.endereco || '—' },
+        { label: 'Cadastrado em', value: criado },
+      ],
+      footer: 'IDroid Virtual · Gestão',
+    });
+  }
 
   function render(list) {
     const el = document.getElementById('cli-list');
@@ -36,7 +56,7 @@ async function init() {
     el.innerHTML = list
       .map(
         (c) => `
-      <div class="card list-item">
+      <div class="card list-item" data-id="${c.id}" style="cursor:pointer">
         <div class="info">
           <div class="title">${c.nome}</div>
           <div class="sub">${formatPhone(c.telefone) || '—'} ${c.endereco ? '· ' + c.endereco : ''}</div>
@@ -45,9 +65,16 @@ async function init() {
     `
       )
       .join('');
+
+    el.querySelectorAll('.list-item').forEach((card) => {
+      card.onclick = () => {
+        const id = Number(card.dataset.id);
+        const cliente = clientes.find((x) => Number(x.id) === id);
+        if (cliente) abrirInspectCliente(cliente);
+      };
+    });
   }
 
-  // Busca local na lista atual
   document.getElementById('busca-cliente').oninput = (e) => {
     const q = e.target.value.toLowerCase().trim();
     if (!q) return render(clientes);
@@ -61,7 +88,6 @@ async function init() {
     );
   };
 
-  // Cadastro via API
   document.getElementById('form-cliente').onsubmit = async (e) => {
     e.preventDefault();
 
@@ -88,14 +114,9 @@ async function init() {
         showToast(response.message || 'Erro ao cadastrar cliente', 'error');
       }
     } catch (err) {
-    console.error('Erro ao criar cliente:', err);
-    console.error('Mensagem:', err.message);
-
-    showToast(
-        err.message || 'Erro de conexão ao cadastrar cliente',
-        'error'
-    );
-}
+      console.error('Erro ao criar cliente:', err);
+      showToast(err.message || 'Erro de conexão ao cadastrar cliente', 'error');
+    }
   };
 
   async function carregarClientes() {

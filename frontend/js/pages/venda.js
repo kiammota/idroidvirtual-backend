@@ -3,6 +3,7 @@ import { SaleService } from '../../client/services/VendasService.js';
 import { ClientService } from '../../client/services/clientService.js';
 import { ProductService } from '../../client/services/ProdutoService.js';
 import { NotificationService } from '../../client/services/notificationService.js';
+import { openInspect } from '../components/InspectModal.js';
 
 window.NotificationService = NotificationService;
 
@@ -170,108 +171,42 @@ async function init() {
     }
   };
 
-function abrirComprovante(venda) {
-    const el = document.getElementById('comprovante-content');
-    if (!el || !venda) return;
+
+  function abrirComprovante(venda) {
+    if (!venda) return;
 
     const data = venda.criado_em
       ? new Date(venda.criado_em).toLocaleString('pt-BR')
       : '—';
 
-    const statusLabel = venda.status === 'CANCELADA' ? 'CANCELADA' : 'CONCLUÍDA';
-    const statusColor = venda.status === 'CANCELADA' ? '#c0392b' : '#27ae60';
-
-    // Tenta achar nome do produto no cache
     const produto = produtosCache.find((p) => p.id === venda.produto_id);
     const nomeProduto = produto ? produto.nome : `Produto #${venda.produto_id}`;
 
-    // Tenta achar nome do cliente
     let nomeCliente = 'Consumidor Final';
     if (venda.cliente_id > 0) {
       const cli = clientesCache.find((c) => c.id === venda.cliente_id);
       nomeCliente = cli ? cli.nome : `Cliente #${venda.cliente_id}`;
     }
 
-    el.innerHTML = `
-      <div style="text-align:center;border-bottom:1px dashed #ccc;padding-bottom:12px;margin-bottom:12px">
-        <div style="font-size:1.1rem;font-weight:700;color:#f06522">IDroid Virtual</div>
-        <div style="font-size:0.8rem;color:#666;margin-top:2px">Comprovante de Venda</div>
-      </div>
-
-      <div style="font-size:0.85rem;line-height:1.7">
-        <div style="display:flex;justify-content:space-between">
-          <span>Venda</span>
-          <strong>#${venda.id}</strong>
-        </div>
-        <div style="display:flex;justify-content:space-between">
-          <span>Data</span>
-          <span>${data}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between">
-          <span>Status</span>
-          <span style="color:${statusColor};font-weight:600">${statusLabel}</span>
-        </div>
-
-        <div style="border-top:1px dashed #eee;margin:10px 0"></div>
-
-        <div style="display:flex;justify-content:space-between">
-          <span>Produto</span>
-          <strong style="text-align:right;max-width:60%">${nomeProduto}</strong>
-        </div>
-        <div style="display:flex;justify-content:space-between">
-          <span>Quantidade</span>
-          <span>${venda.quantidade}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between">
-          <span>Cliente</span>
-          <span style="text-align:right;max-width:60%">${nomeCliente}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between">
-          <span>Pagamento</span>
-          <span>${venda.tipo_pagamento || '—'}</span>
-        </div>
-
-        <div style="border-top:1px dashed #eee;margin:10px 0"></div>
-
-        <div style="display:flex;justify-content:space-between;font-size:1.05rem">
-          <strong>Total</strong>
-          <strong style="color:#f06522">${formatBRL(venda.total)}</strong>
-        </div>
-      </div>
-
-      <div style="text-align:center;margin-top:16px;font-size:0.75rem;color:#999">
-        IDroid Virtual · Gestão
-      </div>
-    `;
-
-    const modal = document.getElementById('modal-comprovante');
-    modal.classList.remove('hidden');
-    modal.classList.add('open');
+    openInspect({
+      title: 'Comprovante de Venda',
+      subtitle: 'IDroid Virtual',
+      status: {
+        label: venda.status === 'CANCELADA' ? 'CANCELADA' : 'CONCLUÍDA',
+        color: venda.status === 'CANCELADA' ? '#c0392b' : '#27ae60',
+      },
+      fields: [
+        { label: 'Venda', value: `#${venda.id}` },
+        { label: 'Data', value: data },
+        { label: 'Produto', value: nomeProduto },
+        { label: 'Quantidade', value: venda.quantidade },
+        { label: 'Cliente', value: nomeCliente },
+        { label: 'Pagamento', value: venda.tipo_pagamento || '—' },
+        { label: 'Total', value: formatBRL(venda.total), highlight: true },
+      ],
+      footer: 'IDroid Virtual · Gestão',
+    });
   }
-
-  function fecharComprovante() {
-    const modal = document.getElementById('modal-comprovante');
-    modal.classList.remove('open');
-    modal.classList.add('hidden');
-  }
-
-  // Botões do modal
-  document.getElementById('btn-fechar-comp').onclick = fecharComprovante;
-
-  document.getElementById('btn-print-comp').onclick = () => {
-    // Esconde os botões temporariamente para o print ficar limpo
-    const actions = document.querySelector('#modal-comprovante .modal-actions');
-    actions.style.display = 'none';
-    window.print();
-    setTimeout(() => {
-      actions.style.display = '';
-    }, 500);
-  };
-
-  // Fecha ao clicar fora
-  document.getElementById('modal-comprovante').addEventListener('click', (e) => {
-    if (e.target.id === 'modal-comprovante') fecharComprovante();
-  });
 
   // ===== VENDAS DO DIA =====
   async function carregarVendasDoDia() {

@@ -491,3 +491,40 @@ label {
   .grid-card .icon { font-size: 2rem; }
   .grid-card .label { font-size: 0.9rem; }
 }
+
+
+/* Inspect modal — print limpo */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #inspect-modal,
+  #inspect-modal.open,
+  #inspect-modal .inspect-modal-box,
+  #inspect-modal .inspect-printable,
+  #inspect-modal .inspect-printable * {
+    visibility: visible !important;
+  }
+  #inspect-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    background: #fff !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding: 24px !important;
+    opacity: 1 !important;
+  }
+  #inspect-modal .inspect-modal-box {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    transform: none !important;
+    opacity: 1 !important;
+    padding: 0 !important;
+  }
+  #inspect-modal .modal-handle,
+  #inspect-modal .modal-actions {
+    display: none !important;
+  }
+}

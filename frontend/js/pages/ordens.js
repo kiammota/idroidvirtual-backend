@@ -4,6 +4,7 @@ import { NotificationService } from '../../client/services/notificationService.j
 import { ClientService } from '../../client/services/clientService.js';
 import { ServiceOrderService } from '../../client/services/OrdensServicoService.js';
 import { OrdemServico } from '../../client/models/OrdemServicoModel.js';
+import { openInspect } from '../components/InspectModal.js';
 
 window.NotificationService = NotificationService;
 
@@ -40,6 +41,7 @@ const formOS = document.getElementById('form-os');
 const asBackdrop = document.getElementById('action-sheet-backdrop');
 const asSheet = document.getElementById('action-sheet');
 const asTitle = document.getElementById('action-sheet-title');
+const asInspect = document.getElementById('as-inspect');
 const asEditar = document.getElementById('as-editar');
 const asFinalizar = document.getElementById('as-finalizar');
 const asExcluir = document.getElementById('as-excluir');
@@ -291,6 +293,40 @@ document.getElementById('btn-nova-os').onclick = () => abrirFormulario('nova');
 // Action Sheet
 asBackdrop.onclick = fecharActionSheet;
 asCancelar.onclick = fecharActionSheet;
+
+
+asInspect.onclick = () => {
+  if (!osSelecionada) return;
+  const os = osSelecionada;
+  fecharActionSheet();
+
+  const num = os.numero_ordem || os.id;
+  const status = (os.status || 'ABERTA').toUpperCase();
+  const statusColor =
+    status === 'CANCELADA' ? '#c0392b' :
+    status === 'CONCLUIDA' || status === 'ENTREGUE' ? '#27ae60' :
+    '#1e40af';
+
+  const criado = os.criado_em
+    ? new Date(os.criado_em).toLocaleString('pt-BR')
+    : '—';
+
+  openInspect({
+    title: `OS #${num}`,
+    subtitle: 'Ordem de Serviço · IDroid Virtual',
+    status: { label: status, color: statusColor },
+    fields: [
+      { label: 'Serviço', value: os.nome_servico || '—' },
+      { label: 'Cliente', value: os.cliente_nome || (os.cliente_id ? `#${os.cliente_id}` : '—') },
+      { label: 'Telefone', value: formatPhone(os.telefone) || '—' },
+      { label: 'Defeito', value: os.defeito || '—' },
+      { label: 'Serviços', value: os.servicos || '—' },
+      { label: 'Valor', value: os.valor > 0 ? formatarMoeda(os.valor) : '—', highlight: true },
+      { label: 'Aberta em', value: criado },
+    ],
+    footer: 'IDroid Virtual · Gestão',
+  });
+};
 
 asEditar.onclick = async () => {
   if (!osSelecionada) return;
