@@ -16,83 +16,43 @@
 
   <main class="app-main">
     <form id="form-venda" class="animate-in">
-      <!-- Cliente -->
+
+      <!-- Cliente (OPCIONAL) -->
       <div class="card">
-        <div class="card-title">Cliente</div>
+        <div class="card-title">Cliente <span class="text-muted" style="font-weight:400;font-size:0.85rem">(opcional)</span></div>
         <div class="form-group">
-          <label for="venda-cliente">Selecionar ou digitar nome</label>
-          <input type="text" id="venda-cliente" list="lista-clientes" placeholder="Nome do cliente" required>
+          <label for="venda-cliente">Nome do cliente</label>
+          <input type="text" id="venda-cliente" list="lista-clientes" placeholder="Deixe em branco = Consumidor Final">
           <datalist id="lista-clientes"></datalist>
         </div>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-cadastro-rapido">＋ Cadastro rápido</button>
-        <div id="cadastro-rapido" class="hidden mt-2">
-          <div class="form-group">
-            <label>Telefone</label>
-            <input type="tel" id="rapido-tel" inputmode="tel" placeholder="(00) 00000-0000">
-          </div>
-          <div class="form-group">
-            <label>Endereço</label>
-            <input type="text" id="rapido-end">
-          </div>
-        </div>
+        <input type="hidden" id="venda-cliente-id" value="0">
       </div>
 
-      <!-- Produtos / Serviços -->
+      <!-- Produto -->
       <div class="card">
-        <div class="card-title">Produtos / Serviços</div>
-        <div id="itens-venda"></div>
-        <button type="button" class="btn btn-outline btn-sm btn-block mt-1" id="btn-add-item">＋ Adicionar item</button>
-      </div>
-
-      <!-- Brinde -->
-      <div class="card">
-        <div class="toggle-row">
-          <span>Saída de Brinde (perda operacional)</span>
-          <div class="toggle" id="toggle-brinde" role="switch" aria-checked="false"></div>
+        <div class="card-title">Produto</div>
+        <div class="form-group">
+          <label for="venda-produto">Selecionar produto *</label>
+          <select id="venda-produto" required>
+            <option value="">Carregando produtos...</option>
+          </select>
         </div>
-      </div>
-
-      <!-- Trade-in -->
-      <div class="card">
-        <div class="card-title">Trade-in (aparelho antigo)</div>
-        <div class="toggle-row">
-          <span>Registrar aparelho antigo</span>
-          <div class="toggle" id="toggle-trade" role="switch" aria-checked="false"></div>
+        <div class="form-group">
+          <label for="venda-qtd">Quantidade *</label>
+          <input type="number" id="venda-qtd" value="1" min="1" required inputmode="numeric">
         </div>
-        <div id="trade-fields" class="hidden">
-          <div class="form-group">
-            <label for="trade-modelo">Modelo</label>
-            <input type="text" id="trade-modelo" placeholder="Ex: Galaxy A14">
-          </div>
-          <div class="form-group">
-            <label for="trade-imei">IMEI</label>
-            <input type="text" id="trade-imei" maxlength="15" inputmode="numeric">
-          </div>
-          <div class="form-group">
-            <label for="trade-valor">Valor de abatimento (R$)</label>
-            <input type="number" id="trade-valor" step="0.01" min="0" inputmode="decimal" value="0">
-          </div>
+        <div class="form-group">
+          <label for="venda-preco">Preço unitário (R$)</label>
+          <input type="number" id="venda-preco" step="0.01" min="0" inputmode="decimal" readonly>
         </div>
       </div>
 
       <!-- Pagamento -->
       <div class="card">
         <div class="card-title">Pagamento</div>
-        <div class="toggle-row">
-          <span>Desconto padrão 10%</span>
-          <div class="toggle on" id="toggle-desc" role="switch" aria-checked="true"></div>
-        </div>
-        <div class="toggle-row">
-          <span>Simular juros maquininha</span>
-          <div class="toggle" id="toggle-juros" role="switch" aria-checked="false"></div>
-        </div>
-        <div class="form-group hidden" id="juros-group">
-          <label for="juros-pct">Taxa (%)</label>
-          <input type="number" id="juros-pct" value="2.5" step="0.1" min="0">
-        </div>
         <div class="form-group">
-          <label for="forma-pag">Forma de pagamento</label>
-          <select id="forma-pag">
+          <label for="forma-pag">Forma de pagamento *</label>
+          <select id="forma-pag" required>
             <option value="DINHEIRO">Dinheiro</option>
             <option value="PIX">Pix</option>
             <option value="CARTAO">Cartão</option>
@@ -101,35 +61,10 @@
         </div>
       </div>
 
-      <!-- Entrega -->
-      <div class="card">
-        <div class="card-title">Entrega (opcional)</div>
-        <div class="toggle-row">
-          <span>Vincular entrega / motoboy</span>
-          <div class="toggle" id="toggle-entrega" role="switch" aria-checked="false"></div>
-        </div>
-        <div id="entrega-fields" class="hidden">
-          <div class="form-group">
-            <label for="ent-motoboy">Motoboy</label>
-            <input type="text" id="ent-motoboy">
-          </div>
-          <div class="form-group">
-            <label for="ent-status">Status</label>
-            <select id="ent-status">
-              <option value="ENVIADO">Enviado</option>
-              <option value="EM_TRANSPORTE">Em transporte</option>
-              <option value="ENTREGUE">Entregue</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
       <!-- Resumo -->
       <div class="summary-box">
-        <div class="summary-row"><span>Subtotal itens</span><span id="r-subtotal">R$ 0,00</span></div>
-        <div class="summary-row"><span>Desconto 10%</span><span id="r-desc">R$ 0,00</span></div>
-        <div class="summary-row"><span>Trade-in (abatimento)</span><span id="r-trade">R$ 0,00</span></div>
-        <div class="summary-row"><span>Juros</span><span id="r-juros">R$ 0,00</span></div>
+        <div class="summary-row"><span>Quantidade</span><span id="r-qtd">1</span></div>
+        <div class="summary-row"><span>Preço unitário</span><span id="r-preco">R$ 0,00</span></div>
         <div class="summary-row total"><span>Total a pagar</span><span id="r-total">R$ 0,00</span></div>
       </div>
 
@@ -137,7 +72,6 @@
     </form>
   </main>
 
-  
   <script type="module" src="../../js/pages/venda.js"></script>
 </body>
 </html>

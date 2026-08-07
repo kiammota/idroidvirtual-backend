@@ -102,25 +102,41 @@ CREATE TABLE vendas (
     id BIGSERIAL PRIMARY KEY,
     produto_id BIGINT NOT NULL,
     usuario_id BIGINT NOT NULL,
+    cliente_id BIGINT DEFAULT NULL,
     quantidade INTEGER NOT NULL DEFAULT 1,
-    
-    -- Campos Financeiros da Venda
-    valor_venda NUMERIC(12,2) NOT NULL,            -- Valor do aparelho NOVO vendido
-    aparelho_troca_valor NUMERIC(12,2) DEFAULT 0.00, -- Valor de avaliação do USADO (se houver)
-    total NUMERIC(12,2) NOT NULL,                  -- Valor final pago (valor_venda - aparelho_troca_valor)
-    
-    -- Informações da Troca / Trade-in
-    tipo VARCHAR(30) NOT NULL DEFAULT 'VENDA_DIRETA', -- 'VENDA_DIRETA' ou 'TROCA'
+    valor_venda NUMERIC(12,2) NOT NULL,
+    aparelho_troca_valor NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    total NUMERIC(12,2) NOT NULL,
+    tipo VARCHAR(30) NOT NULL DEFAULT 'VENDA_DIRETA',
     aparelho_troca_modelo VARCHAR(100),
     aparelho_troca_imei VARCHAR(50),
-    
     tipo_pagamento VARCHAR(50) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'CONCLUIDA',
     criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
-
-    -- Constraints / Chaves Estrangeiras
-    CONSTRAINT fk_venda_produto FOREIGN KEY(produto_id) REFERENCES produtos(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_venda_usuario FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_venda_produto
+        FOREIGN KEY (produto_id)
+        REFERENCES produtos(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_venda_usuario
+        FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_venda_cliente
+        FOREIGN KEY (cliente_id)
+        REFERENCES clientes(id)
+        ON DELETE SET NULL,
+    CONSTRAINT ck_venda_quantidade
+        CHECK (quantidade > 0),
+    CONSTRAINT ck_venda_valor_venda
+        CHECK (valor_venda >= 0),
+    CONSTRAINT ck_venda_aparelho_troca_valor
+        CHECK (aparelho_troca_valor >= 0),
+    CONSTRAINT ck_venda_total
+        CHECK (total >= 0),
+    CONSTRAINT ck_venda_tipo
+        CHECK (tipo IN ('VENDA_DIRETA', 'TROCA')),
+    CONSTRAINT ck_venda_status
+        CHECK (status IN ('CONCLUIDA', 'CANCELADA'))
 );
 
 CREATE TABLE trocas (

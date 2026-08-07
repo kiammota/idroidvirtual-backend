@@ -4,15 +4,22 @@ import { Venda } from "../models/VendaModel.js";
 class SaleServiceClass extends HttpClient {
   /**
    * Cria uma venda
-   * OpenAPI: produto_id, quantidade, tipo_pagamento (obrigatórios); cliente_id opcional (0 = Consumidor Final)
+   * Obrigatórios: produto_id, quantidade, tipo_pagamento, usuario_id
+   * Opcional: cliente_id (0 = Consumidor Final)
    */
   async create(params) {
     const body = {
       produto_id: Number(params.produto_id),
       quantidade: Number(params.quantidade) || 1,
       tipo_pagamento: params.tipo_pagamento || "PIX",
-      cliente_id: params.cliente_id != null ? Number(params.cliente_id) : 0,
+      usuario_id: Number(params.usuario_id), // obrigatório
+      cliente_id: Number(params.cliente_id) || 0, // 0 = Consumidor Final
     };
+
+    if (params.total != null) {
+      body.total = Number(params.total);
+    }
+
     const response = await this.post("/sales", body);
     if (response.success && response.data) {
       response.data = new Venda(response.data);

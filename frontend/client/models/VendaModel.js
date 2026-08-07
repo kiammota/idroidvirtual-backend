@@ -3,7 +3,6 @@ export class Venda {
         this.id = Number(data.id) || 0;
         this.produto_id = Number(data.produto_id) || 0;
         this.usuario_id = Number(data.usuario_id) || 0;
-        this.cliente_id = Number(data.cliente_id) || 0;
         this.quantidade = Number(data.quantidade) || 0;
         this.total = Number(data.total) || 0;
         this.tipo_pagamento = data.tipo_pagamento ?? "";

@@ -116,12 +116,15 @@ func (s *VendaService) ObterVendasDoMes(ctx context.Context) ([]models.Venda, er
 }
 
 // ExecutarVenda realiza a venda, baixa o estoque e registra na auditoria
+// ExecutarVenda realiza a venda, baixa o estoque e registra na auditoria.
+// clienteID = 0 significa Consumidor Final (opcional).
 func (s *VendaService) ExecutarVenda(
 	ctx context.Context,
 	usuarioID int64,
 	produtoID int64,
 	quantidade int,
 	tipoPagamento string,
+	clienteID int64, // 0 = Consumidor Final
 ) (*models.Venda, error) {
 
 	if quantidade <= 0 {
@@ -157,6 +160,16 @@ func (s *VendaService) ExecutarVenda(
 
 	// 3. Cliente (opcional)
 	clienteInfo := "para Consumidor Final"
+	if clienteID > 0 {
+		cliente, err := s.clienteRepo.BuscarPorIDTx(ctx, tx, clienteID)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao buscar cliente: %w", err)
+		}
+		if cliente == nil {
+			return nil, errors.New("cliente informado não foi encontrado")
+		}
+		clienteInfo = fmt.Sprintf("para o cliente %s", cliente.Nome)
+	}
 
 	// 4. Baixa de estoque
 	if err := s.produtoRepo.DiminuirEstoqueTx(ctx, tx, produtoID, quantidade); err != nil {
@@ -168,6 +181,7 @@ func (s *VendaService) ExecutarVenda(
 	venda := &models.Venda{
 		ProdutoID:     produtoID,
 		UsuarioID:     usuarioID,
+		ClienteID:     clienteID, // 0 = Consumidor Final
 		Quantidade:    quantidade,
 		Total:         valorTotal,
 		TipoPagamento: tipoPagamento,
@@ -192,6 +206,7 @@ func (s *VendaService) ExecutarVenda(
 		ctx, tx, usuarioID, acaoTexto, "vendas", venda.ID, nil,
 		map[string]interface{}{
 			"produto_id":     produtoID,
+			"cliente_id":     clienteID,
 			"quantidade":     quantidade,
 			"total":          valorTotal,
 			"tipo_pagamento": tipoPagamento,

@@ -42,6 +42,7 @@ func (c *VendasController) Create(ctx *gin.Context) {
 		input.ProdutoID,
 		input.Quantidade,
 		input.TipoPagamento,
+		input.ClienteID,
 	)
 
 	if err != nil {
