@@ -102,28 +102,44 @@ CREATE TABLE vendas (
     id BIGSERIAL PRIMARY KEY,
     produto_id BIGINT NOT NULL,
     usuario_id BIGINT NOT NULL,
-    cliente_id BIGINT, -- Pode ser NULL se a venda for anônima/balcão
+    cliente_id BIGINT,
     quantidade INTEGER NOT NULL DEFAULT 1,
-    total NUMERIC(12,2) NOT NULL,
+    
+    -- Campos Financeiros da Venda
+    valor_venda NUMERIC(12,2) NOT NULL,            -- Valor do aparelho NOVO vendido
+    aparelho_troca_valor NUMERIC(12,2) DEFAULT 0.00, -- Valor de avaliação do USADO (se houver)
+    total NUMERIC(12,2) NOT NULL,                  -- Valor final pago (valor_venda - aparelho_troca_valor)
+    
+    -- Informações da Troca / Trade-in
+    tipo VARCHAR(30) NOT NULL DEFAULT 'VENDA_DIRETA', -- 'VENDA_DIRETA' ou 'TROCA'
+    aparelho_troca_modelo VARCHAR(100),
+    aparelho_troca_imei VARCHAR(50),
+    
     tipo_pagamento VARCHAR(50) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'CONCLUIDA',
     criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
 
-    -- Chaves Estrangeiras (FKs)
-    CONSTRAINT fk_venda_produto
-        FOREIGN KEY(produto_id)
-        REFERENCES produtos(id)
-        ON DELETE RESTRICT,
+    -- Constraints / Chaves Estrangeiras
+    CONSTRAINT fk_venda_produto FOREIGN KEY(produto_id) REFERENCES produtos(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_venda_usuario FOREIGN KEY(usuario_id) REFERENCES usuarios(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_venda_cliente FOREIGN KEY(cliente_id) REFERENCES clientes(id) ON DELETE SET NULL
+);
 
-    CONSTRAINT fk_venda_usuario
-        FOREIGN KEY(usuario_id)
-        REFERENCES usuarios(id)
-        ON DELETE RESTRICT,
+CREATE TABLE trocas (
+    id BIGSERIAL PRIMARY KEY,
+    venda_id BIGINT NOT NULL UNIQUE,              -- Vincula 1:1 com a venda realizada
+    modelo_aparelho VARCHAR(150) NOT NULL,        -- Ex: 'iPhone 12 Pro Max 128GB'
+    imei VARCHAR(50) NOT NULL,                    -- IMEI do aparelho usado recebido
+    valor_avaliacao NUMERIC(12,2) NOT NULL,       -- Valor abatido na venda (custo de entrada no estoque)
+    condicao VARCHAR(50) DEFAULT 'USADO',         -- Ex: 'SEMINOVO', 'DEFEITO', 'EXCELENTE'
+    observacoes TEXT,                             -- Avarias, marcas de uso, etc.
+    criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT fk_venda_cliente
-        FOREIGN KEY(cliente_id)
-        REFERENCES clientes(id)
-        ON DELETE SET NULL
+    -- Restrição de Chave Estrangeira
+    CONSTRAINT fk_troca_venda 
+        FOREIGN KEY (venda_id) 
+        REFERENCES vendas(id) 
+        ON DELETE CASCADE
 );
 
 CREATE INDEX idx_vendas_produto_id
