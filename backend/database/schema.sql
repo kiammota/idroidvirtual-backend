@@ -243,7 +243,7 @@ CREATE TABLE auditorias (
     CONSTRAINT fk_auditoria_usuario
         FOREIGN KEY(usuario_id)
         REFERENCES usuarios(id)
-        ON DELETE RESTRICT
+        ON DELETE restrict,
     CONSTRAINT fk_empresa
         FOREIGN KEY(empresa_id)
         REFERENCES empresas(id)
