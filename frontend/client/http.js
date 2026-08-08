@@ -20,6 +20,34 @@ export class HttpClient {
     sessionStorage.removeItem(TOKEN_STORAGE_KEY);
   }
 
+  /**
+   * Decodifica o payload do JWT e retorna o empresa_id
+   * @returns {number|null}
+   */
+  getEmpresaId() {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const payloadBase64 = token.split('.')[1];
+      if (!payloadBase64) return null;
+
+      const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+
+      const payload = JSON.parse(jsonPayload);
+      return payload.empresa_id || payload.empresaId || null;
+    } catch (e) {
+      console.error('Erro ao decodificar token JWT para obter empresa_id:', e);
+      return null;
+    }
+  }
+
   getHeaders() {
     const headers = {
       'Content-Type': 'application/json',
@@ -78,5 +106,9 @@ export class HttpClient {
 
   async patch(endpoint, body) {
     return this.request('PATCH', endpoint, body);
+  }
+
+  async put(endpoint, body) {
+    return this.request('PUT', endpoint, body);
   }
 }

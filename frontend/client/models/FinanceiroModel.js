@@ -1,61 +1,49 @@
 export class DetalhePagamento {
   /**
    * @param {Object} data
-   * @param {string} [data.formaPagamento] - PIX, CARTAO_CREDITO, DINHEIRO
-   * @param {number} [data.total]
    */
-  constructor({ formaPagamento = '', total = 0.0 } = {}) {
-    this.forma_pagamento = formaPagamento;
-    this.total = Number(total);
+  constructor(data = {}) {
+    this.forma_pagamento = data.formaPagamento || data.forma_pagamento || '';
+    this.total = Number(data.total || 0);
   }
 }
 
 export class ResumoFinanceiro {
   /**
    * @param {Object} data
-   * @param {Date|string} [data.periodoInicio]
-   * @param {Date|string} [data.periodoFim]
-   * @param {number} [data.totalVendas]
-   * @param {number} [data.quantidadeVendas]
-   * @param {number} [data.ticketMedioVenda]
-   * @param {number} [data.totalServicos]
-   * @param {number} [data.quantidadeOS]
-   * @param {number} [data.ticketMedioServico]
-   * @param {number} [data.faturamentoBruto]
-   * @param {Array<DetalhePagamento>} [data.formasPagamento]
-   * @param {number} [data.totalDespesas]
-   * @param {number} [data.valorEstoquePerdido]
-   * @param {number} [data.quantidadePerdas]
-   * @param {number} [data.lucroLiquido]
-   * @param {number} [data.margemLucro]
    */
   constructor(data = {}) {
-    this.periodo_inicio = data.periodoInicio ? new Date(data.periodoInicio) : null;
-    this.periodo_fim = data.periodoFim ? new Date(data.periodoFim) : null;
+    const inicio = data.periodoInicio || data.periodo_inicio;
+    const fim = data.periodoFim || data.periodo_fim;
+
+    this.periodo_inicio = inicio ? new Date(inicio) : null;
+    this.periodo_fim = fim ? new Date(fim) : null;
 
     // Vendas de Produtos
-    this.total_vendas = Number(data.totalVendas || 0);
-    this.quantidade_vendas = Number(data.quantidadeVendas || 0);
-    this.ticket_medio_venda = Number(data.ticketMedioVenda || 0);
+    this.total_vendas = Number(data.totalVendas ?? data.total_vendas ?? 0);
+    this.quantidade_vendas = Number(data.quantidadeVendas ?? data.quantidade_vendas ?? 0);
+    this.ticket_medio_venda = Number(data.ticketMedioVenda ?? data.ticket_medio_venda ?? 0);
 
     // Ordens de Serviço
-    this.total_servicos = Number(data.totalServicos || 0);
-    this.quantidade_os = Number(data.quantidadeOS || 0);
-    this.ticket_medio_servico = Number(data.ticketMedioServico || 0);
+    this.total_servicos = Number(data.totalServicos ?? data.total_servicos ?? 0);
+    this.quantidade_os = Number(data.quantidadeOS ?? data.quantidade_os ?? 0);
+    this.ticket_medio_servico = Number(data.ticketMedioServico ?? data.ticket_medio_servico ?? 0);
 
     // Faturamento e Formas de Pagamento
-    this.faturamento_bruto = Number(data.faturamentoBruto || 0);
-    this.formas_pagamento = Array.isArray(data.formasPagamento)
-      ? data.formasPagamento.map(fp => new DetalhePagamento(fp))
+    this.faturamento_bruto = Number(data.faturamentoBruto ?? data.faturamento_bruto ?? 0);
+    
+    const fpList = data.formasPagamento || data.formas_pagamento;
+    this.formas_pagamento = Array.isArray(fpList)
+      ? fpList.map(fp => new DetalhePagamento(fp))
       : [];
 
     // Custos e Deduções
-    this.total_despesas = Number(data.totalDespesas || 0);
-    this.valor_estoque_perdido = Number(data.valorEstoquePerdido || 0);
-    this.quantidade_perdas = Number(data.quantidadePerdas || 0);
+    this.total_despesas = Number(data.totalDespesas ?? data.total_despesas ?? 0);
+    this.valor_estoque_perdido = Number(data.valorEstoquePerdido ?? data.valor_estoque_perdido ?? 0);
+    this.quantidade_perdas = Number(data.quantidadePerdas ?? data.quantidade_perdas ?? 0);
 
     // Indicadores
-    this.lucro_liquido = Number(data.lucroLiquido || 0);
-    this.margem_lucro = Number(data.margemLucro || 0); // Em porcentagem (%)
+    this.lucro_liquido = Number(data.lucroLiquido ?? data.lucro_liquido ?? 0);
+    this.margem_lucro = Number(data.margemLucro ?? data.margem_lucro ?? 0);
   }
 }

@@ -20,17 +20,18 @@ func NewTokenService(secret string) *TokenService {
 }
 
 // GerarToken gera um JWT contendo ID e Email do usuário.
-func (s *TokenService) GerarToken(usuarioID int64, email string) (string, error) {
+func (s *TokenService) GerarToken(empresaID, usuarioID int64, email string) (string, error) {
 	claims := models.JWTClaims{
+		EmpresaID: empresaID,
 		UsuarioID: usuarioID,
 		Email:     email,
 		RegisteredClaims: jwt.RegisteredClaims{
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(s.SecretKey))
 }
 

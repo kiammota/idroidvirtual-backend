@@ -17,7 +17,6 @@ func NewLoginService(
 	usuarioRepository *repositories.UsuarioRepository,
 	tokenService *TokenService,
 ) *LoginService {
-
 	return &LoginService{
 		UsuarioRepository: usuarioRepository,
 		TokenService:      tokenService,
@@ -31,7 +30,6 @@ type LoginResponse struct {
 
 // Realiza login
 func (s *LoginService) Login(email string, senha string) (*LoginResponse, error) {
-
 	if email == "" {
 		return nil, errors.New("email obrigatório")
 	}
@@ -41,7 +39,6 @@ func (s *LoginService) Login(email string, senha string) (*LoginResponse, error)
 	}
 
 	usuario, err := s.UsuarioRepository.BuscarPorEmail(email)
-
 	if err != nil {
 		return nil, errors.New("email ou senha inválidos")
 	}
@@ -50,16 +47,16 @@ func (s *LoginService) Login(email string, senha string) (*LoginResponse, error)
 		[]byte(usuario.Senha),
 		[]byte(senha),
 	)
-
 	if err != nil {
 		return nil, errors.New("email ou senha inválidos")
 	}
 
+	// Passando o EmpresaID retornado do repositório para a criação do token
 	token, err := s.TokenService.GerarToken(
+		usuario.EmpresaID,
 		usuario.ID,
 		usuario.Email,
 	)
-
 	if err != nil {
 		return nil, err
 	}

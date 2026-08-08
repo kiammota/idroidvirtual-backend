@@ -26,20 +26,53 @@
         <button class="btn btn-primary btn-sm" id="btn-mes" style="flex:1">Mês</button>
       </div>
 
+      <!-- Período -->
+      <div class="card">
+        <div class="card-title">Período de Apuração</div>
+        <div class="summary-row"><span>Início</span><span id="f-periodo-inicio">--/--/----</span></div>
+        <div class="summary-row"><span>Fim</span><span id="f-periodo-fim">--/--/----</span></div>
+      </div>
+
+      <!-- Serviços (OS) -->
       <div class="card">
         <div class="card-title">Ganhos de Serviços (OS)</div>
         <div class="summary-row"><span>Total serviços</span><span id="f-servicos">R$ 0,00</span></div>
         <div class="summary-row"><span>Qtd. OS</span><span id="f-qtd-os">0</span></div>
+        <div class="summary-row"><span>Ticket médio serviço</span><span id="f-ticket-servico">R$ 0,00</span></div>
       </div>
+
+      <!-- Vendas -->
       <div class="card">
         <div class="card-title">Ganhos de Vendas</div>
         <div class="summary-row"><span>Total vendas</span><span id="f-vendas">R$ 0,00</span></div>
         <div class="summary-row"><span>Qtd. vendas</span><span id="f-qtd-vendas">0</span></div>
+        <div class="summary-row"><span>Ticket médio venda</span><span id="f-ticket-venda">R$ 0,00</span></div>
       </div>
+
+      <!-- Formas de Pagamento recebidas -->
+      <div class="card">
+        <div class="card-title">Formas de Pagamento</div>
+        <div id="f-formas-pagamento-list">
+          <!-- O JS pode renderizar a lista aqui ou manter fixo conforme abaixo -->
+          <div class="summary-row"><span>PIX</span><span id="f-pgto-pix">R$ 0,00</span></div>
+          <div class="summary-row"><span>Cartão de Crédito</span><span id="f-pgto-cartao">R$ 0,00</span></div>
+          <div class="summary-row"><span>Dinheiro</span><span id="f-pgto-dinheiro">R$ 0,00</span></div>
+        </div>
+      </div>
+
+      <!-- Perdas e Estoque -->
+      <div class="card">
+        <div class="card-title">Perdas de Estoque</div>
+        <div class="summary-row"><span>Valor perdido</span><span id="f-valor-perdas">R$ 0,00</span></div>
+        <div class="summary-row"><span>Qtd. de perdas</span><span id="f-qtd-perdas">0</span></div>
+      </div>
+
+      <!-- Resultado Final -->
       <div class="card">
         <div class="card-title">Resultado</div>
         <div class="summary-row"><span>Faturamento bruto</span><span id="f-bruto">R$ 0,00</span></div>
-        <div class="summary-row"><span>Despesas</span><span id="f-despesas">0</span></div>
+        <div class="summary-row"><span>Total despesas</span><span id="f-despesas">R$ 0,00</span></div>
+        <div class="summary-row"><span>Margem de lucro</span><span id="f-margem">0,00%</span></div>
         <div class="summary-row total"><span>Lucro líquido</span><span id="f-lucro">R$ 0,00</span></div>
       </div>
     </section>

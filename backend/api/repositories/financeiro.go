@@ -34,7 +34,7 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 		),
 		os_summary AS (
 			SELECT 
-				COALESCE(SUM(valor_total), 0) AS total_servicos,
+				COALESCE(SUM(valor), 0) AS total_servicos,
 				COUNT(*) AS qtd_os
 			FROM ordens_servico
 			WHERE status = 'FINALIZADA'
@@ -42,16 +42,17 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 		),
 		trocas_summary AS (
 			SELECT 
-				COALESCE(SUM(valor_prejuizo), 0) AS valor_estoque_perdido,
+				COALESCE(SUM(valor_avaliacao), 0) AS valor_estoque_perdido, -- Corrigido: valor_avaliacao
 				COUNT(*) AS qtd_perdas
 			FROM trocas
 			WHERE criado_em BETWEEN $1 AND $2
 		),
 		despesas_summary AS (
 			SELECT 
-				COALESCE(SUM(valor), 0) AS total_despesas
+				COALESCE(SUM(valor_pago), 0) AS total_despesas
 			FROM despesas
-			WHERE data_pagamento BETWEEN $1 AND $2
+			WHERE status = 'PAGO'
+			  AND data_pagamento BETWEEN $1 AND $2
 		)
 		SELECT 
 			v.total_vendas,

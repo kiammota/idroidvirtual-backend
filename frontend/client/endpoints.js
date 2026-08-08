@@ -71,9 +71,9 @@ export const ENDPOINTS = {
   },
 
   // Despesas
-  EXPENSE: {
-    BASE: "/expense",
-    BY_ID: (id) => `/expense/${id}`,
+  EXPENSES: {
+    BASE: "/expenses",
+    BY_ID: (id) => `/expenses/${id}`,
   },
 };
 

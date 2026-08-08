@@ -7,7 +7,7 @@ import (
 )
 
 func RegistrarDespesas(router *gin.RouterGroup, c controllers.DespesaController) {
-	despesas := router.Group("/expense")
+	despesas := router.Group("/expenses")
 	{
 		despesas.POST("", c.Criar)
 		despesas.GET("", c.Listar)

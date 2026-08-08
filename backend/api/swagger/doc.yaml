@@ -3,7 +3,7 @@ info:
   title: API REST - iDroid Virtual
   version: 1.0.0
   description: >
-    Documentação da API REST do sistema.
+    Documentação da API REST do Idroid.
     Backend em Go (Gin + pgx).
 
 servers:
@@ -25,6 +25,92 @@ tags:
   - name: Auditoria
 
 paths:
+
+  /expenses:
+    get:
+      tags: [Expenses]
+      operationId: listExpenses
+      summary: Lista todas as despesas
+      responses:
+        '200':
+          $ref: '#/components/responses/ExpensesEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Expenses]
+      operationId: createExpense
+      summary: Cria uma nova despesa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseCreatePayload'
+      responses:
+        '201':
+          $ref: '#/components/responses/ExpenseSingleEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /expenses/{id}:
+    put:
+      tags: [Expenses]
+      operationId: updateExpense
+      summary: Atualiza uma despesa existente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseUpdatePayload'
+      responses:
+        '200':
+          $ref: '#/components/responses/ExpenseSingleEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Expenses]
+      operationId: deleteExpense
+      summary: Remove uma despesa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
   # ==================== AUTH ====================
   /auth/login:
     post:
@@ -784,6 +870,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
+
+  
 
   # ==================== AUDITORIA ====================
   /auditoria:
