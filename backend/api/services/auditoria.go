@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"backend/models"
@@ -26,50 +27,67 @@ func NewAuditoriaService(repo *repositories.AuditoriaRepository) *AuditoriaServi
 	return &AuditoriaService{repo: repo}
 }
 
-// Log registra ações de auditoria fora de uma transação
-func (s *AuditoriaService) Log(
+// Log registra ações genéricas de auditoria
+func (s *AuditoriaService) log(
 	ctx context.Context,
 	usuarioID int64,
 	acao string,
-	tabela string,
-	registroID int64,
-	antigo map[string]interface{},
-	novo map[string]interface{},
 ) error {
 	audit := models.Auditoria{
-		UsuarioID:      usuarioID,
-		Acao:           acao,
-		Tabela:         tabela,
-		RegistroID:     registroID,
-		ValoresAntigos: antigo,
-		ValoresNovos:   novo,
+		UsuarioID: usuarioID,
+		Acao:      acao,
 	}
 	return s.repo.Criar(ctx, audit)
 }
 
-// LogTx registra a auditoria reaproveitando uma transação ativa (pgx.Tx)
-func (s *AuditoriaService) LogTx(
+// LogTx registra ações de auditoria dentro de uma transação ativa
+func (s *AuditoriaService) logTx(
 	ctx context.Context,
 	tx pgx.Tx,
 	usuarioID int64,
 	acao string,
-	tabela string,
-	registroID int64,
-	antigo map[string]interface{},
-	novo map[string]interface{},
 ) error {
 	audit := models.Auditoria{
-		UsuarioID:      usuarioID,
-		Acao:           acao,
-		Tabela:         tabela,
-		RegistroID:     registroID,
-		ValoresAntigos: antigo,
-		ValoresNovos:   novo,
+		UsuarioID: usuarioID,
+		Acao:      acao,
 	}
 	return s.repo.CriarTx(ctx, tx, audit)
 }
 
-// ListarPorPeriodo busca os registros calculando o intervalo de tempo (dia, semana, mês)
+// Métodos auxiliares específicos para registrar ações comuns:
+
+func (s *AuditoriaService) CadastrarVenda(
+	ctx context.Context,
+	tx pgx.Tx,
+	usuarioID int64,
+	vendaID int64,
+	valor float64,
+	tipoPagamento string,
+) error {
+	acao := fmt.Sprintf("Cadastrou a venda #%d no valor de R$ %.2f via %s", vendaID, valor, tipoPagamento)
+	if tx != nil {
+		return s.logTx(ctx, tx, usuarioID, acao)
+	}
+	return s.log(ctx, usuarioID, acao)
+}
+
+func (s *AuditoriaService) CadastrarOrdemDeServico(ctx context.Context, tx pgx.Tx, usuarioID int64, osID int64, cliente string) error {
+	acao := fmt.Sprintf("Cadastrou a ordem de serviço #%d para o cliente %s", osID, cliente)
+	if tx != nil {
+		return s.logTx(ctx, tx, usuarioID, acao)
+	}
+	return s.log(ctx, usuarioID, acao)
+}
+
+func (s *AuditoriaService) CadastrarUsuario(ctx context.Context, tx pgx.Tx, usuarioID int64, novoUsuarioNome string) error {
+	acao := fmt.Sprintf("Cadastrou o novo usuário: %s", novoUsuarioNome)
+	if tx != nil {
+		return s.logTx(ctx, tx, usuarioID, acao)
+	}
+	return s.log(ctx, usuarioID, acao)
+}
+
+// ListarPorPeriodo busca os registros considerando o fuso de São Paulo
 func (s *AuditoriaService) ListarPorPeriodo(
 	ctx context.Context,
 	periodo PeriodoTipo,
@@ -85,19 +103,26 @@ func (s *AuditoriaService) ListarPorPeriodo(
 	}
 
 	offset := (pagina - 1) * itensPorPagina
-	agora := time.Now()
+
+	// Define a timezone de São Paulo para cálculo dos períodos
+	loc, err := time.LoadLocation("America/Sao_Paulo")
+	if err != nil {
+		loc = time.FixedZone("UTC-3", -3*60*60)
+	}
+
+	agora := time.Now().In(loc)
 	var inicio time.Time
 	fim := agora
 
 	switch periodo {
 	case PeriodoDia:
-		inicio = time.Date(agora.Year(), agora.Month(), agora.Day(), 0, 0, 0, 0, agora.Location())
+		inicio = time.Date(agora.Year(), agora.Month(), agora.Day(), 0, 0, 0, 0, loc)
 	case PeriodoSemana:
 		inicio = agora.AddDate(0, 0, -7)
 	case PeriodoMes:
-		inicio = time.Date(agora.Year(), agora.Month(), 1, 0, 0, 0, 0, agora.Location())
+		inicio = time.Date(agora.Year(), agora.Month(), 1, 0, 0, 0, 0, loc)
 	default:
-		inicio = time.Date(agora.Year(), agora.Month(), agora.Day(), 0, 0, 0, 0, agora.Location())
+		inicio = time.Date(agora.Year(), agora.Month(), agora.Day(), 0, 0, 0, 0, loc)
 	}
 
 	return s.repo.BuscarPorPeriodo(ctx, inicio, fim, itensPorPagina, offset)

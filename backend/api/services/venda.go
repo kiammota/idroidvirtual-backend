@@ -114,7 +114,6 @@ func (s *VendaService) ExecutarVenda(
 	}
 
 	// 3. Cliente (opcional)
-	clienteInfo := "para Consumidor Final"
 	if clienteID > 0 {
 		cliente, err := s.clienteRepo.BuscarPorIDTx(ctx, tx, clienteID)
 		if err != nil {
@@ -123,7 +122,6 @@ func (s *VendaService) ExecutarVenda(
 		if cliente == nil {
 			return nil, errors.New("cliente informado não foi encontrado")
 		}
-		clienteInfo = fmt.Sprintf("para o cliente %s", cliente.Nome)
 	}
 
 	// 4. Baixa de estoque
@@ -147,26 +145,7 @@ func (s *VendaService) ExecutarVenda(
 		return nil, fmt.Errorf("falha ao registrar venda: %w", err)
 	}
 
-	// 5. Auditoria
-	acaoTexto := fmt.Sprintf(
-		"%s realizou venda de %s por R$ %.2f via %s %s",
-		usuario.Nome,
-		produto.Nome,
-		valorTotal,
-		tipoPagamento,
-		clienteInfo,
-	)
-
-	err = s.auditoria.LogTx(
-		ctx, tx, usuarioID, acaoTexto, "vendas", venda.ID, nil,
-		map[string]interface{}{
-			"produto_id":     produtoID,
-			"cliente_id":     clienteID,
-			"quantidade":     quantidade,
-			"total":          valorTotal,
-			"tipo_pagamento": tipoPagamento,
-		},
-	)
+	err = s.auditoria.CadastrarVenda(ctx, tx, usuarioID, venda.ID, valorTotal, tipoPagamento)
 	if err != nil {
 		return nil, fmt.Errorf("falha ao gravar auditoria da venda: %w", err)
 	}

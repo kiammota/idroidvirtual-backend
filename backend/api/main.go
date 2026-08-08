@@ -49,7 +49,7 @@ func main() {
 	tokenService := services.NewTokenService(cfg.ChaveJWT)
 	loginService := services.NewLoginService(usuarioRepo, tokenService)
 	vendaService := services.NewVendaService(bd, vendaRepo, produtoRepo, *usuarioRepo, clienteRepo, *auditoriaService)
-	ordensServicoService := services.NewOrdensServicoService(bd, ordemServicoRepo, &clienteRepo)
+	ordensServicoService := services.NewOrdensServicoService(bd, ordemServicoRepo, &clienteRepo, auditoriaService)
 	trocaService := services.NewTrocaService(trocaRepo)
 	financeiroService := services.NewFinanceiroService(financeiroRepo)
 	despesaService := services.NewDespesaService(despesaRepo)

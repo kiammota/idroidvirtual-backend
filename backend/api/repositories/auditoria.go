@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"backend/models"
@@ -20,81 +19,34 @@ func NewAuditoriaRepository(db *pgxpool.Pool) *AuditoriaRepository {
 }
 
 func (r *AuditoriaRepository) Criar(ctx context.Context, audit models.Auditoria) error {
-	var valoresAntigos, valoresNovos []byte
-	var err error
-
-	if audit.ValoresAntigos != nil {
-		valoresAntigos, err = json.Marshal(audit.ValoresAntigos)
-		if err != nil {
-			return err
-		}
-	}
-
-	if audit.ValoresNovos != nil {
-		valoresNovos, err = json.Marshal(audit.ValoresNovos)
-		if err != nil {
-			return err
-		}
-	}
-
 	query := `
-		INSERT INTO auditorias (
-			usuario_id, acao, tabela, registro_id, valores_antigos, valores_novos, horario
-		) VALUES ($1, $2, $3, $4, $5, $6, NOW())
+		INSERT INTO auditorias (usuario_id, acao, horario) 
+		VALUES ($1, $2, NOW())
 	`
-
-	_, err = r.db.Exec(ctx, query,
-		audit.UsuarioID,
-		audit.Acao,
-		audit.Tabela,
-		audit.RegistroID,
-		valoresAntigos,
-		valoresNovos,
-	)
+	_, err := r.db.Exec(ctx, query, audit.UsuarioID, audit.Acao)
 	return err
 }
 
 func (r *AuditoriaRepository) CriarTx(ctx context.Context, tx pgx.Tx, audit models.Auditoria) error {
-	var valoresAntigos, valoresNovos []byte
-	var err error
-
-	if audit.ValoresAntigos != nil {
-		valoresAntigos, err = json.Marshal(audit.ValoresAntigos)
-		if err != nil {
-			return err
-		}
-	}
-
-	if audit.ValoresNovos != nil {
-		valoresNovos, err = json.Marshal(audit.ValoresNovos)
-		if err != nil {
-			return err
-		}
-	}
-
 	query := `
-		INSERT INTO auditorias (
-			usuario_id, acao, tabela, registro_id, valores_antigos, valores_novos, horario
-		) VALUES ($1, $2, $3, $4, $5, $6, NOW())
+		INSERT INTO auditorias (usuario_id, acao, horario) 
+		VALUES ($1, $2, NOW())
 	`
-
-	_, err = tx.Exec(ctx, query,
-		audit.UsuarioID,
-		audit.Acao,
-		audit.Tabela,
-		audit.RegistroID,
-		valoresAntigos,
-		valoresNovos,
-	)
+	_, err := tx.Exec(ctx, query, audit.UsuarioID, audit.Acao)
 	return err
 }
-
 func (r *AuditoriaRepository) BuscarPorPeriodo(ctx context.Context, inicio, fim time.Time, limit, offset int) ([]models.Auditoria, error) {
 	query := `
-		SELECT id, usuario_id, acao, tabela, registro_id, valores_antigos, valores_novos, horario
-		FROM auditorias
-		WHERE horario BETWEEN $1 AND $2
-		ORDER BY horario DESC
+		SELECT 
+			a.id, 
+			a.usuario_id, 
+			COALESCE(u.nome, 'Usuário Desconhecido') AS nome_usuario,
+			a.acao, 
+			a.horario
+		FROM auditorias a
+		LEFT JOIN usuarios u ON u.id = a.usuario_id
+		WHERE a.horario BETWEEN $1 AND $2
+		ORDER BY a.horario DESC
 		LIMIT $3 OFFSET $4
 	`
 
@@ -104,31 +56,28 @@ func (r *AuditoriaRepository) BuscarPorPeriodo(ctx context.Context, inicio, fim 
 	}
 	defer rows.Close()
 
-	var lista []models.Auditoria
+	// Carrega a localização de São Paulo para formatar o retorno do Go
+	loc, err := time.LoadLocation("America/Sao_Paulo")
+	if err != nil {
+		loc = time.FixedZone("UTC-3", -3*60*60)
+	}
+
+	lista := make([]models.Auditoria, 0)
 	for rows.Next() {
 		var a models.Auditoria
-		var antigos, novos []byte
-
 		err := rows.Scan(
 			&a.ID,
 			&a.UsuarioID,
+			&a.NomeUsuario,
 			&a.Acao,
-			&a.Tabela,
-			&a.RegistroID,
-			&antigos,
-			&novos,
 			&a.Horario,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		if len(antigos) > 0 {
-			_ = json.Unmarshal(antigos, &a.ValoresAntigos)
-		}
-		if len(novos) > 0 {
-			_ = json.Unmarshal(novos, &a.ValoresNovos)
-		}
+		// Converte a data lida do banco para a timezone de São Paulo
+		a.Horario = a.Horario.In(loc)
 
 		lista = append(lista, a)
 	}

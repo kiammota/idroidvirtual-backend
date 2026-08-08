@@ -17,17 +17,20 @@ type OrdensServicoService struct {
 	Pool              *pgxpool.Pool
 	OrdensServicoRepo *repositories.OrdemServicoRepository
 	ClienteRepo       *repositories.ClienteRepository
+	AuditService      *AuditoriaService
 }
 
 func NewOrdensServicoService(
 	pool *pgxpool.Pool,
 	ordemRepo *repositories.OrdemServicoRepository,
 	clienteRepo *repositories.ClienteRepository,
+	auditService *AuditoriaService,
 ) *OrdensServicoService {
 	return &OrdensServicoService{
 		Pool:              pool,
 		OrdensServicoRepo: ordemRepo,
 		ClienteRepo:       clienteRepo,
+		AuditService:      auditService,
 	}
 }
 
@@ -39,6 +42,7 @@ func (s *OrdensServicoService) ListarPorPeriodo(ctx context.Context, inicio, fim
 	return s.OrdensServicoRepo.ListarPorPeriodo(ctx, inicio, fim)
 }
 
+// POST /service-orders
 // POST /service-orders
 func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemServico) (err error) {
 	if ordem == nil {
@@ -108,7 +112,11 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 		return fmt.Errorf("erro ao salvar ordem de serviço: %w", err)
 	}
 
-	// 6. Confirma transação
+	// 6. Registro de Auditoria
+	if err = s.AuditService.CadastrarOrdemDeServico(ctx, tx, ordem.UsuarioID, ordem.ID, cliente.Nome); err != nil {
+		return fmt.Errorf("erro ao registrar auditoria: %w", err)
+	}
+	// 7. Confirma transação
 	if err = tx.Commit(ctx); err != nil {
 		return fmt.Errorf("erro ao confirmar transação: %w", err)
 	}

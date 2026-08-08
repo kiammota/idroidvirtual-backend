@@ -173,9 +173,11 @@ ON vendas(tipo_pagamento);
 -- ORDEM DE SERVIÇO
 -- =========================
 
+
 CREATE TABLE ordens_servico (
     id BIGSERIAL PRIMARY KEY,
     numero_ordem BIGSERIAL NOT NULL UNIQUE,
+    usuario_id BIGINT NOT NULL,
     cliente_id BIGINT NOT NULL,
     nome_servico VARCHAR(255) NOT NULL,
     defeito TEXT,
@@ -185,12 +187,16 @@ CREATE TABLE ordens_servico (
     status VARCHAR(50) NOT NULL DEFAULT 'ABERTA',
     criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
     atualizado_em TIMESTAMP NOT NULL DEFAULT NOW(),
-    
     CONSTRAINT fk_os_cliente
         FOREIGN KEY(cliente_id)
         REFERENCES clientes(id)
-        ON DELETE RESTRICT
+        ON DELETE restrict,
+    CONSTRAINT fk_usuario
+        FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id)
+        ON DELETE restrict
 );
+
 
 -- Índices recomendados
 CREATE INDEX idx_os_numero_ordem ON ordens_servico(numero_ordem);
@@ -230,17 +236,18 @@ ON ordens_servico(status);
 
 CREATE TABLE auditorias (
     id BIGSERIAL PRIMARY KEY,
+    empresa_id BIGINT NOT NULL,
     usuario_id BIGINT NOT NULL,
     acao VARCHAR(50) NOT NULL,
-    tabela VARCHAR(100) NOT NULL,
-    registro_id BIGINT NOT NULL,
-    valores_antigos JSONB,
-    valores_novos JSONB,
     horario TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_auditoria_usuario
         FOREIGN KEY(usuario_id)
         REFERENCES usuarios(id)
         ON DELETE RESTRICT
+    CONSTRAINT fk_empresa
+        FOREIGN KEY(empresa_id)
+        REFERENCES empresas(id)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE movimentacoes_estoque (
