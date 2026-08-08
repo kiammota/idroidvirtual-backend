@@ -1,3 +1,4 @@
+import ENDPOINTS from "../endpoints.js";
 import { HttpClient } from "../http.js";
 import { Troca } from "../models/TrocaModel.js";
 
@@ -15,7 +16,7 @@ class TrocaServiceClass extends HttpClient {
             ...(params.observacoes != null ? { observacoes: params.observacoes } : {}),
           };
 
-    const response = await this.post("/trocas", body);
+    const response = await this.post(ENDPOINTS.TROCAS.BASE, body);
     if (response.success && response.data) {
       response.data = new Troca(response.data);
     }
@@ -23,7 +24,7 @@ class TrocaServiceClass extends HttpClient {
   }
 
   async getBySaleId(vendaId) {
-    const response = await this.get(`/trocas/venda/${vendaId}`);
+    const response = await this.get(ENDPOINTS.TROCAS.BY_VENDA_ID(vendaId));
     if (response.success && response.data) {
       response.data = new Troca(response.data);
     }

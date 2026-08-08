@@ -1,3 +1,4 @@
+import ENDPOINTS from "../endpoints.js";
 import { HttpClient } from "../http.js";
 import { LoginRequest } from "../models/LoginModel.js";
 
@@ -10,7 +11,7 @@ class AuthServiceClass extends HttpClient {
    */
   async login(email, senha) {
     const model = new LoginRequest({ email, senha });
-    const response = await this.post("/auth/login", model);
+    const response = await this.post(ENDPOINTS.AUTH.LOGIN, model);
 
     if (response.success && response.data) {
       this.setToken(response.data);
@@ -34,7 +35,7 @@ class AuthServiceClass extends HttpClient {
    * @returns {Promise<{success: boolean, data: null, message: string}>}
    */
   async elevate(senha) {
-    return this.post("/users/elevate", { senha });
+    return this.post(ENDPOINTS.USERS.ELEVATE, { senha });
   }
 }
 

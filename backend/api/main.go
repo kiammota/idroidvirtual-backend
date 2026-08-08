@@ -65,9 +65,9 @@ func main() {
 	ordensServicoController := controllers.NewOrdemServicoController(ordensServicoService)
 	clienteController := controllers.NewClientController(&clienteRepo)
 	produtoController := controllers.NewProductController(&produtoRepo)
-	closingController := controllers.NewClosingController(vendaService)
 	auditoriaController := controllers.NewAuditoriaController(auditoriaService)
 	trocaController := controllers.NewTrocaController(trocaService)
+
 	financeiroController := controllers.NewFinanceiroController(financeiroService)
 	despesaController := controllers.NewDespesaController(despesaService)
 
@@ -115,7 +115,6 @@ func main() {
 	routes.ClienteRoutes(private, clienteController)
 	routes.ProdutoRoutes(private, produtoController)
 	routes.VendaRoutes(private, vendaController)
-	routes.ClosingRoutes(private, closingController)
 	routes.AuditoriaRoute(private, auditoriaController)
 	routes.RegistrarRotasTroca(private, trocaController)
 	routes.FinanceiroRoutes(private, *financeiroController)

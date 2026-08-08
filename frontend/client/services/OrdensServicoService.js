@@ -1,3 +1,4 @@
+import ENDPOINTS from "../endpoints.js";
 import { HttpClient } from "../http.js";
 import { OrdemServico } from "../models/OrdemServicoModel.js";
 
@@ -14,7 +15,7 @@ class ServiceOrderServiceClass extends HttpClient {
     if (params.nome_servico != null) body.nome_servico = params.nome_servico;
     if (params.valor != null) body.valor = Number(params.valor);
 
-    const response = await this.post("/service-orders", body);
+    const response = await this.post(ENDPOINTS.SERVICE_ORDERS.BASE, body);
     if (response.success && response.data) {
       response.data = new OrdemServico(response.data);
     }
@@ -22,7 +23,7 @@ class ServiceOrderServiceClass extends HttpClient {
   }
 
   async listAll() {
-    const response = await this.get("/service-orders");
+    const response = await this.get(ENDPOINTS.SERVICE_ORDERS.BASE);
     if (response.success && Array.isArray(response.data)) {
       response.data = response.data.map((data) => new OrdemServico(data));
     }
@@ -30,7 +31,7 @@ class ServiceOrderServiceClass extends HttpClient {
   }
 
   async getById(id) {
-    const response = await this.get(`/service-orders/${id}`);
+    const response = await this.get(ENDPOINTS.SERVICE_ORDERS.BY_ID(id));
     if (response.success && response.data) {
       response.data = new OrdemServico(response.data);
     }
@@ -49,7 +50,7 @@ class ServiceOrderServiceClass extends HttpClient {
     if (params.cliente_id !== undefined) body.cliente_id = params.cliente_id;
     if (params.telefone !== undefined) body.telefone = params.telefone;
 
-    const response = await this.patch(`/service-orders/${id}`, body);
+    const response = await this.patch(ENDPOINTS.SERVICE_ORDERS.BY_ID(id), body);
     if (response.success && response.data) {
       response.data = new OrdemServico(response.data);
     }
@@ -57,7 +58,7 @@ class ServiceOrderServiceClass extends HttpClient {
   }
 
   async remove(id) {
-    return this.delete(`/service-orders/${id}`);
+    return this.delete(ENDPOINTS.SERVICE_ORDERS.BY_ID(id));
   }
 
   async deleteOrder(id) {
@@ -65,7 +66,7 @@ class ServiceOrderServiceClass extends HttpClient {
   }
 
   async listByClientId(cliente_id) {
-    const response = await this.get(`/service-orders/client-id/${cliente_id}`);
+    const response = await this.get(ENDPOINTS.SERVICE_ORDERS.BY_CLIENT_ID(cliente_id));
     if (response.success && Array.isArray(response.data)) {
       response.data = response.data.map((data) => new OrdemServico(data));
     }
@@ -73,7 +74,7 @@ class ServiceOrderServiceClass extends HttpClient {
   }
 
   async listByClientName(client_name) {
-    const response = await this.get(`/service-orders/client-name/${encodeURIComponent(client_name)}`);
+    const response = await this.get(ENDPOINTS.SERVICE_ORDERS.BY_CLIENT_NAME(client_name));
     if (response.success && Array.isArray(response.data)) {
       response.data = response.data.map((data) => new OrdemServico(data));
     }
@@ -81,7 +82,7 @@ class ServiceOrderServiceClass extends HttpClient {
   }
 
   async listByClientEmail(client_email) {
-    const response = await this.get(`/service-orders/client-email/${encodeURIComponent(client_email)}`);
+    const response = await this.get(ENDPOINTS.SERVICE_ORDERS.BY_CLIENT_EMAIL(client_email));
     if (response.success && Array.isArray(response.data)) {
       response.data = response.data.map((data) => new OrdemServico(data));
     }
@@ -89,7 +90,7 @@ class ServiceOrderServiceClass extends HttpClient {
   }
 
   async listByClientNumber(client_number) {
-    const response = await this.get(`/service-orders/client-number/${encodeURIComponent(client_number)}`);
+    const response = await this.get(ENDPOINTS.SERVICE_ORDERS.BY_CLIENT_NUMBER(client_number));
     if (response.success && Array.isArray(response.data)) {
       response.data = response.data.map((data) => new OrdemServico(data));
     }
@@ -97,7 +98,7 @@ class ServiceOrderServiceClass extends HttpClient {
   }
 
   async listLastThreeMonths() {
-    const response = await this.get("/service-orders/three-months");
+    const response = await this.get(ENDPOINTS.SERVICE_ORDERS.THREE_MONTHS);
     if (response.success && Array.isArray(response.data)) {
       response.data = response.data.map((data) => new OrdemServico(data));
     }
@@ -105,7 +106,7 @@ class ServiceOrderServiceClass extends HttpClient {
   }
 
   async listLastSixMonths() {
-    const response = await this.get("/service-orders/six-months");
+    const response = await this.get(ENDPOINTS.SERVICE_ORDERS.SIX_MONTHS);
     if (response.success && Array.isArray(response.data)) {
       response.data = response.data.map((data) => new OrdemServico(data));
     }
@@ -113,7 +114,7 @@ class ServiceOrderServiceClass extends HttpClient {
   }
 
   async listByStatus(status) {
-    const response = await this.get(`/service-orders/status/${encodeURIComponent(status)}`);
+    const response = await this.get(ENDPOINTS.SERVICE_ORDERS.BY_STATUS(status));
     if (response.success && Array.isArray(response.data)) {
       response.data = response.data.map((data) => new OrdemServico(data));
     }

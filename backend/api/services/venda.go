@@ -39,58 +39,6 @@ func NewVendaService(
 	}
 }
 
-// FechamentoDoDia consolida total e faturamento do dia atual
-func (s *VendaService) FechamentoDoDia(ctx context.Context) (*models.Fechamento, error) {
-	agora := time.Now()
-	inicioDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 0, 0, 0, 0, agora.Location())
-	fimDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 23, 59, 59, 999999999, agora.Location())
-
-	vendas, err := s.vendaRepo.BuscarPorPeriodo(ctx, inicioDia, fimDia)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao buscar vendas do dia: %w", err)
-	}
-
-	var faturamento float64
-	for _, v := range vendas {
-		if v.Status != "CANCELADA" {
-			faturamento += v.Total
-		}
-	}
-
-	return &models.Fechamento{
-		TotalVendas: len(vendas),
-		Faturamento: faturamento,
-		Periodo:     inicioDia.Format("02/01/2006"),
-		Vendas:      vendas,
-	}, nil
-}
-
-// FechamentoDoMes consolida total e faturamento do mês atual
-func (s *VendaService) FechamentoDoMes(ctx context.Context) (*models.Fechamento, error) {
-	agora := time.Now()
-	inicioMes := time.Date(agora.Year(), agora.Month(), 1, 0, 0, 0, 0, agora.Location())
-	fimMes := inicioMes.AddDate(0, 1, 0).Add(-time.Nanosecond)
-
-	vendas, err := s.vendaRepo.BuscarPorPeriodo(ctx, inicioMes, fimMes)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao buscar vendas do mês: %w", err)
-	}
-
-	var faturamento float64
-	for _, v := range vendas {
-		if v.Status != "CANCELADA" {
-			faturamento += v.Total
-		}
-	}
-
-	return &models.Fechamento{
-		TotalVendas: len(vendas),
-		Faturamento: faturamento,
-		Periodo:     inicioMes.Format("01/2006"),
-		Vendas:      vendas,
-	}, nil
-}
-
 func (s *VendaService) ListarPorPeriodo(ctx context.Context, inicio time.Time, fim time.Time) ([]models.Venda, error) {
 	if inicio.After(fim) {
 		return nil, errors.New("a data inicial não pode ser posterior à data final")

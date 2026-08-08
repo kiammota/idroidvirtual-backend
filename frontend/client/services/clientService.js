@@ -1,10 +1,11 @@
+import ENDPOINTS from "../endpoints.js";
 import { HttpClient } from "../http.js";
 import { Cliente } from "../models/ClienteModel.js";
 
 class ClientServiceClass extends HttpClient {
   async create(params) {
     const { nome, telefone, email, endereco } = params;
-    const response = await this.post("/clients/", { nome, telefone, email, endereco });
+    const response = await this.post(ENDPOINTS.CLIENTS.BASE, { nome, telefone, email, endereco });
     if (response.success && response.data) {
       response.data = new Cliente(response.data);
     }
@@ -12,7 +13,7 @@ class ClientServiceClass extends HttpClient {
   }
 
   async listAll() {
-    const response = await this.get("/clients/");
+    const response = await this.get(ENDPOINTS.CLIENTS.BASE);
     if (response.success && Array.isArray(response.data)) {
       response.data = response.data.map((data) => new Cliente(data));
     }
@@ -20,7 +21,7 @@ class ClientServiceClass extends HttpClient {
   }
 
   async getById(id) {
-    const response = await this.get(`/clients/${id}`);
+    const response = await this.get(ENDPOINTS.CLIENTS.BY_ID);
     if (response.success && response.data) {
       response.data = new Cliente(response.data);
     }
@@ -28,7 +29,8 @@ class ClientServiceClass extends HttpClient {
   }
 
   async searchByPhone(telefone) {
-    const response = await this.get(`/clients/number?telefone=${encodeURIComponent(telefone)}`);
+    const params = new URLSearchParams({ telefone }).toString();
+    const response = await this.get(`${ENDPOINTS.CLIENTS.NUMBER}?${params}`);
     if (response.success && Array.isArray(response.data)) {
       response.data = response.data.map((data) => new Cliente(data));
     }

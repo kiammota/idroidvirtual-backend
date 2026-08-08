@@ -19,8 +19,9 @@ tags:
   - name: Clients
   - name: Products
   - name: Sales
-  - name: Closing
   - name: ServiceOrders
+  - name: Exchanges (Trocas)
+  - name: Financial
   - name: Auditoria
 
 paths:
@@ -38,7 +39,7 @@ paths:
             schema:
               $ref: '#/components/schemas/LoginRequest'
             example:
-              emial: usuario@email.com
+              email: usuario@email.com
               senha: "123456"
       responses:
         '200':
@@ -300,6 +301,28 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /products/{id}:
+    get:
+      tags: [Products]
+      operationId: getProductById
+      summary: Busca produto por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /products/category/{category}:
     get:
       tags: [Products]
@@ -320,55 +343,12 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /products/{id}:
-    post:
-      tags: [Products]
-      operationId: updateProduct
-      summary: Atualiza um produto
-      parameters:
-        - $ref: '#/components/parameters/ProductIdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProdutoCreate'
-      responses:
-        '200':
-          $ref: '#/components/responses/ProductEnvelope'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
-    delete:
-      tags: [Products]
-      operationId: deleteProduct
-      summary: Remove um produto
-      parameters:
-        - $ref: '#/components/parameters/ProductIdPath'
-      responses:
-        '200':
-          $ref: '#/components/responses/EmptyEnvelope'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
   # ==================== SALES ====================
   /sales:
     post:
       tags: [Sales]
       operationId: createSale
-      summary: Registra uma venda
-      description: >
-        Cria uma venda. O total e o status são calculados/definidos pela API.
-        Envie cliente_id = 0 para "Consumidor Final".
+      summary: Cria uma nova venda
       requestBody:
         required: true
         content:
@@ -386,15 +366,60 @@ paths:
           $ref: '#/components/responses/InternalError'
 
   /sales/{id}:
-    delete:
+    get:
       tags: [Sales]
-      operationId: deleteSale
-      summary: Cancela ou remove uma venda
+      operationId: getSaleById
+      summary: Busca uma venda por ID
       parameters:
-        - $ref: '#/components/parameters/SaleIdPath'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         '200':
-          $ref: '#/components/responses/EmptyEnvelope'
+          $ref: '#/components/responses/SaleEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [Sales]
+      operationId: cancelSale
+      summary: Cancela uma venda
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [usuario_id]
+              properties:
+                usuario_id:
+                  type: integer
+                  format: int64
+                motivo:
+                  type: string
+                  default: "Cancelamento manual"
+      responses:
+        '200':
+          description: Venda cancelada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -406,10 +431,10 @@ paths:
     get:
       tags: [Sales]
       operationId: listSalesByDay
-      summary: Vendas do dia
+      summary: Lista vendas do dia atual
       responses:
         '200':
-          $ref: '#/components/responses/GenericEnvelope'
+          $ref: '#/components/responses/SaleListEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -419,37 +444,10 @@ paths:
     get:
       tags: [Sales]
       operationId: listSalesByMonth
-      summary: Vendas do mês
+      summary: Lista vendas do mês atual
       responses:
         '200':
-          $ref: '#/components/responses/GenericEnvelope'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  # ==================== CLOSING ====================
-  /closing/dia:
-    get:
-      tags: [Closing]
-      operationId: closingByDay
-      summary: Fechamento do dia
-      responses:
-        '200':
-          $ref: '#/components/responses/GenericEnvelope'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /closing/mes:
-    get:
-      tags: [Closing]
-      operationId: closingByMonth
-      summary: Fechamento do mês
-      responses:
-        '200':
-          $ref: '#/components/responses/GenericEnvelope'
+          $ref: '#/components/responses/SaleListEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -460,7 +458,7 @@ paths:
     post:
       tags: [ServiceOrders]
       operationId: createServiceOrder
-      summary: Cria uma ordem de serviço
+      summary: Cria uma nova ordem de serviço
       requestBody:
         required: true
         content:
@@ -479,7 +477,7 @@ paths:
     get:
       tags: [ServiceOrders]
       operationId: listServiceOrders
-      summary: Lista ordens de serviço
+      summary: Lista todas as ordens de serviço
       responses:
         '200':
           $ref: '#/components/responses/ServiceOrderListEnvelope'
@@ -494,7 +492,12 @@ paths:
       operationId: getServiceOrderById
       summary: Busca ordem de serviço por ID
       parameters:
-        - $ref: '#/components/parameters/ServiceOrderIdPath'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         '200':
           $ref: '#/components/responses/ServiceOrderEnvelope'
@@ -506,10 +509,15 @@ paths:
           $ref: '#/components/responses/InternalError'
     patch:
       tags: [ServiceOrders]
-      operationId: patchServiceOrder
-      summary: Atualiza parcialmente uma ordem de serviço
+      operationId: updateServiceOrder
+      summary: Atualiza uma ordem de serviço
       parameters:
-        - $ref: '#/components/parameters/ServiceOrderIdPath'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       requestBody:
         required: true
         content:
@@ -530,12 +538,21 @@ paths:
     delete:
       tags: [ServiceOrders]
       operationId: deleteServiceOrder
-      summary: Remove uma ordem de serviço
+      summary: Deleta uma ordem de serviço
       parameters:
-        - $ref: '#/components/parameters/ServiceOrderIdPath'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         '200':
-          $ref: '#/components/responses/EmptyEnvelope'
+          description: Ordem de serviço deletada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -543,72 +560,11 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /service-orders/client-id/{cliente_id}:
-    get:
-      tags: [ServiceOrders]
-      operationId: listServiceOrdersByClientId
-      summary: Lista ordens por cliente ID
-      parameters:
-        - $ref: '#/components/parameters/ClienteIdPath'
-      responses:
-        '200':
-          $ref: '#/components/responses/ServiceOrderListEnvelope'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /service-orders/client-name/{client_name}:
-    get:
-      tags: [ServiceOrders]
-      operationId: listServiceOrdersByClientName
-      summary: Lista ordens por nome do cliente
-      parameters:
-        - $ref: '#/components/parameters/ClientNamePath'
-      responses:
-        '200':
-          $ref: '#/components/responses/ServiceOrderListEnvelope'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /service-orders/client-email/{client_email}:
-    get:
-      tags: [ServiceOrders]
-      operationId: listServiceOrdersByClientEmail
-      summary: Lista ordens por email do cliente
-      parameters:
-        - $ref: '#/components/parameters/ClientEmailPath'
-      responses:
-        '200':
-          $ref: '#/components/responses/ServiceOrderListEnvelope'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalError'
-  
-
-  /service-orders/client-number/{client_number}:
-    get:
-      tags: [ServiceOrders]
-      operationId: listServiceOrdersByClientNumber
-      summary: Lista ordens por número do cliente
-      parameters:
-        - $ref: '#/components/parameters/ClientNumberPath'
-      responses:
-        '200':
-          $ref: '#/components/responses/ServiceOrderListEnvelope'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
   /service-orders/three-months:
     get:
       tags: [ServiceOrders]
       operationId: listServiceOrdersLastThreeMonths
-      summary: Ordens dos últimos três meses
+      summary: Lista ordens de serviço dos últimos 3 meses
       responses:
         '200':
           $ref: '#/components/responses/ServiceOrderListEnvelope'
@@ -621,7 +577,85 @@ paths:
     get:
       tags: [ServiceOrders]
       operationId: listServiceOrdersLastSixMonths
-      summary: Ordens dos últimos seis meses
+      summary: Lista ordens de serviço dos últimos 6 meses
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders/client-id/{clientId}:
+    get:
+      tags: [ServiceOrders]
+      operationId: listServiceOrdersByClientId
+      summary: Lista ordens de serviço por ID do cliente
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders/client-name/{clientName}:
+    get:
+      tags: [ServiceOrders]
+      operationId: listServiceOrdersByClientName
+      summary: Lista ordens de serviço por nome do cliente
+      parameters:
+        - name: clientName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders/client-email/{clientEmail}:
+    get:
+      tags: [ServiceOrders]
+      operationId: listServiceOrdersByClientEmail
+      summary: Lista ordens de serviço por email do cliente
+      parameters:
+        - name: clientEmail
+          in: path
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /service-orders/client-number/{clientNumber}:
+    get:
+      tags: [ServiceOrders]
+      operationId: listServiceOrdersByClientNumber
+      summary: Lista ordens de serviço por número do cliente
+      parameters:
+        - name: clientNumber
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           $ref: '#/components/responses/ServiceOrderListEnvelope'
@@ -639,13 +673,111 @@ paths:
         - name: status
           in: path
           required: true
-          description: Status da ordem de serviço (ex. EM_ANDAMENTO, FINALIZADA, CANCELADA)
           schema:
             type: string
-            enum: [EM_ANDAMENTO, FINALIZADA, CANCELADA]
+          example: ABERTA
       responses:
         '200':
           $ref: '#/components/responses/ServiceOrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ==================== EXCHANGES (TROCAS) ====================
+  /api/v1/trocas:
+    post:
+      tags: [Exchanges (Trocas)]
+      operationId: createExchange
+      summary: Cria uma nova troca
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrocaCreate'
+      responses:
+        '201':
+          $ref: '#/components/responses/ExchangeEnvelopeCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/trocas/venda/{vendaId}:
+    get:
+      tags: [Exchanges (Trocas)]
+      operationId: getExchangeByVendaId
+      summary: Busca troca por ID de venda
+      parameters:
+        - name: vendaId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          $ref: '#/components/responses/ExchangeEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ==================== FINANCIAL ====================
+  /financial/today:
+    get:
+      tags: [Financial]
+      operationId: getFinancialToday
+      summary: Obtém resumo financeiro do dia atual
+      responses:
+        '200':
+          $ref: '#/components/responses/FinancialEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /financial/month:
+    get:
+      tags: [Financial]
+      operationId: getFinancialMonth
+      summary: Obtém resumo financeiro do mês atual
+      responses:
+        '200':
+          $ref: '#/components/responses/FinancialEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /financial/period:
+    get:
+      tags: [Financial]
+      operationId: getFinancialPeriod
+      summary: Obtém resumo financeiro por período
+      parameters:
+        - name: inicio
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2024-01-01"
+        - name: fim
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2024-01-31"
+      responses:
+        '200':
+          $ref: '#/components/responses/FinancialEnvelope'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -657,102 +789,24 @@ paths:
   /auditoria:
     get:
       tags: [Auditoria]
-      operationId: listarAuditorias
-      summary: Lista registros de auditoria
+      operationId: listAuditoria
+      summary: Lista logs de auditoria
       parameters:
-        - name: periodo
+        - name: limit
           in: query
-          required: false
-          schema:
-            type: string
-            enum: [dia, semana, mes]
-            default: dia
-        - name: pagina
-          in: query
-          required: false
           schema:
             type: integer
-            default: 1
-            minimum: 1
-        - name: itens_por_pagina
+            default: 100
+        - name: offset
           in: query
-          required: false
           schema:
             type: integer
-            default: 20
-            minimum: 1
-            maximum: 100
+            default: 0
       responses:
         '200':
-          description: Lista de auditorias
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Auditoria'
+          $ref: '#/components/responses/AuditoriaListEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-  /trocas:
-    post:
-      tags: [Trocas]
-      operationId: createTroca
-      summary: Cria uma troca vinculada a uma venda
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TrocaCreate'
-      responses:
-        '201':
-          $ref: '#/components/responses/TrocaEnvelopeCreated'
-
-        '400':
-          $ref: '#/components/responses/BadRequest'
-
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-        '422':
-          description: Dados da troca inválidos
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-        '500':
-          $ref: '#/components/responses/InternalError'
-
-
-  /trocas/venda/{vendaId}:
-    get:
-      tags: [Trocas]
-      operationId: getTradeBySaleId
-      summary: Busca a troca vinculada a uma venda
-      parameters:
-        - name: vendaId
-          in: path
-          required: true
-          description: ID da venda
-          schema:
-            type: integer
-            format: int64
-            example: 1001
-      responses:
-        '200':
-          $ref: '#/components/responses/TrocaEnvelope'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          description: Nenhuma troca encontrada para a venda
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalError'
 
@@ -771,266 +825,250 @@ components:
       schema:
         type: integer
         format: int64
-    ProductIdPath:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: integer
-        format: int64
-    SaleIdPath:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: integer
-        format: int64
-    ServiceOrderIdPath:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: integer
-        format: int64
-    ClienteIdPath:
-      name: cliente_id
-      in: path
-      required: true
-      schema:
-        type: integer
-        format: int64
-    ClientNamePath:
-      name: client_name
-      in: path
-      required: true
-      schema:
-        type: string
-    ClientEmailPath:
-      name: client_email
-      in: path
-      required: true
-      schema:
-        type: string
-        format: email
-    ClientNumberPath:
-      name: client_number
-      in: path
-      required: true
-      schema:
-        type: string
+      description: ID do cliente
 
   responses:
+    # ==================== COMMON RESPONSES ====================
     BadRequest:
       description: Requisição inválida
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiEnvelope'
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Campo obrigatório faltando"
+
     Unauthorized:
-      description: Não autenticado ou token inválido
+      description: Não autorizado (token inválido ou ausente)
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiEnvelope'
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Token inválido ou expirado"
+
     NotFound:
       description: Recurso não encontrado
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiEnvelope'
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Recurso não encontrado"
+
     InternalError:
       description: Erro interno do servidor
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiEnvelope'
-    EmptyEnvelope:
-      description: Operação concluída
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ApiEnvelope'
-    GenericEnvelope:
-      description: Resposta genérica
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ApiEnvelope'
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Erro interno do servidor"
+
+    # ==================== CLIENT RESPONSES ====================
     ClientEnvelope:
-      description: Resposta com um cliente
+      description: Cliente encontrado
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: '#/components/schemas/ApiEnvelope'
-              - type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Cliente'
+            $ref: '#/components/schemas/ApiEnvelope'
+
+    ClientEnvelopeCreated:
+      description: Cliente criado com sucesso
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiEnvelope'
+
     ClientListEnvelope:
       description: Lista de clientes
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: '#/components/schemas/ApiEnvelope'
-              - type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Cliente'
-    ClientEnvelopeCreated:
-      description: Cliente criado
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/ApiEnvelope'
-              - type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Cliente'
+            type: object
+            properties:
+              success:
+                type: boolean
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cliente'
+              message:
+                type: string
+
+    # ==================== PRODUCT RESPONSES ====================
     ProductEnvelope:
-      description: Resposta com um produto
+      description: Produto encontrado
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: '#/components/schemas/ApiEnvelope'
-              - type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Produto'
+            $ref: '#/components/schemas/ApiEnvelope'
+
+    ProductEnvelopeCreated:
+      description: Produto criado com sucesso
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiEnvelope'
+
     ProductListEnvelope:
       description: Lista de produtos
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: '#/components/schemas/ApiEnvelope'
-              - type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Produto'
-    ProductEnvelopeCreated:
-      description: Produto criado
+            type: object
+            properties:
+              success:
+                type: boolean
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Produto'
+              message:
+                type: string
+
+    # ==================== SALE RESPONSES ====================
+    SaleEnvelope:
+      description: Venda encontrada
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: '#/components/schemas/ApiEnvelope'
-              - type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Produto'
+            $ref: '#/components/schemas/ApiEnvelope'
+
     SaleEnvelopeCreated:
-      description: Venda criada
+      description: Venda criada com sucesso
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: '#/components/schemas/ApiEnvelope'
-              - type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Venda'
+            $ref: '#/components/schemas/ApiEnvelope'
+
+    SaleListEnvelope:
+      description: Lista de vendas
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Venda'
+              message:
+                type: string
+
+    # ==================== SERVICE ORDER RESPONSES ====================
     ServiceOrderEnvelope:
-      description: Resposta com uma OS
+      description: Ordem de serviço encontrada
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: '#/components/schemas/ApiEnvelope'
-              - type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/OrdemServico'
+            $ref: '#/components/schemas/ApiEnvelope'
+
     ServiceOrderEnvelopeCreated:
-      description: OS criada
+      description: Ordem de serviço criada com sucesso
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: '#/components/schemas/ApiEnvelope'
-              - type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/OrdemServico'
+            $ref: '#/components/schemas/ApiEnvelope'
+
     ServiceOrderListEnvelope:
-      description: Lista de OS
+      description: Lista de ordens de serviço
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: '#/components/schemas/ApiEnvelope'
-              - type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/OrdemServico'
+            type: object
+            properties:
+              success:
+                type: boolean
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrdemServico'
+              message:
+                type: string
+
+    # ==================== EXCHANGE RESPONSES ====================
+    ExchangeEnvelope:
+      description: Troca encontrada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiEnvelope'
+
+    ExchangeEnvelopeCreated:
+      description: Troca criada com sucesso
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiEnvelope'
+
+    # ==================== FINANCIAL RESPONSES ====================
+    FinancialEnvelope:
+      description: Resumo financeiro
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiEnvelope'
+
+    # ==================== AUDITORIA RESPONSES ====================
+    AuditoriaListEnvelope:
+      description: Lista de logs de auditoria
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Auditoria'
+              message:
+                type: string
 
   schemas:
+    # ==================== COMMON SCHEMAS ====================
     ApiEnvelope:
       type: object
-      required: [data, success, message]
+      required: [success, message]
       properties:
-        data: {}
         success:
           type: boolean
+        data:
+          type: object
         message:
           type: string
 
-  TrocaCreate:
-  type: object
-  required:
-    - venda_id
-    - modelo_aparelho
-    - imei
-    - valor_avaliacao
+    ErrorResponse:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
 
-  properties:
-
-    venda_id:
-      type: integer
-      format: int64
-      example: 123
-
-    modelo_aparelho:
-      type: string
-      example: iPhone 13 Pro
-
-    imei:
-      type: string
-      example: "356789123456789"
-
-    valor_avaliacao:
-      type: number
-      format: double
-      example: 1500.00
-
-    condicao:
-      type: string
-      example: USADO
-
-    observacoes:
-      type: string
-      nullable: true
-      example: "Aparelho funcionando perfeitamente"
-
+    # ==================== REQUEST SCHEMAS ====================
     LoginRequest:
       type: object
-      required: [login, senha]
+      required: [email, senha]
       properties:
-        login:
+        email:
           type: string
+          format: email
           example: usuario@email.com
         senha:
           type: string
           format: password
+          example: "123456"
 
     ElevateUserRequest:
       type: object
@@ -1039,6 +1077,7 @@ components:
         senha:
           type: string
           format: password
+          example: "123456"
 
     CreateUserRequest:
       type: object
@@ -1047,14 +1086,202 @@ components:
         empresa_id:
           type: integer
           format: int64
+          example: 1
+        email:
+          type: string
+          format: email
+          example: usuario@email.com
+        nome:
+          type: string
+          example: "João Silva"
+        senha:
+          type: string
+          format: password
+          example: "123456"
+
+    ClienteCreate:
+      type: object
+      required: [nome]
+      properties:
+        nome:
+          type: string
+          example: "João dos Santos"
+        telefone:
+          type: [string, "null"]
+          nullable: true
+          example: "75999999999"
+        endereco:
+          type: [string, "null"]
+          nullable: true
+          example: "Rua A, 123"
+        email:
+          type: [string, "null"]
+          nullable: true
+          format: email
+          example: "joao@email.com"
+
+    ProdutoCreate:
+      type: object
+      required: [nome, preco, estoque, categoria]
+      properties:
+        nome:
+          type: string
+          example: "iPhone 13 Pro"
+        preco:
+          type: number
+          format: double
+          example: 5999.99
+        estoque:
+          type: integer
+          example: 10
+        categoria:
+          type: string
+          example: "CELULAR"
+
+    VendaCreate:
+      type: object
+      required: [produto_id, quantidade, tipo_pagamento]
+      properties:
+        produto_id:
+          type: integer
+          format: int64
+          example: 1
+        cliente_id:
+          type: integer
+          format: int64
+          description: Envie 0 para Consumidor Final
+          default: 0
+          example: 0
+        quantidade:
+          type: integer
+          minimum: 1
+          example: 1
+        tipo_pagamento:
+          type: string
+          enum: [PIX, CARTAO, DINHEIRO, TRANSFERENCIA]
+          example: "PIX"
+        usuario_id:
+          type: integer
+          format: int64
+          example: 1
+        total:
+          type: number
+          format: double
+          nullable: true
+
+    OrdemServicoCreate:
+      type: object
+      required: [cliente_id, status]
+      properties:
+        cliente_id:
+          type: integer
+          format: int64
+          example: 1
+        defeito:
+          type: [string, "null"]
+          nullable: true
+          example: "Tela quebrada"
+        servicos:
+          type: [string, "null"]
+          nullable: true
+          example: "Troca de tela"
+        assinatura:
+          type: [string, "null"]
+          nullable: true
+        nome_servico:
+          type: [string, "null"]
+          nullable: true
+        telefone:
+          type: [string, "null"]
+          nullable: true
+        valor:
+          type: [number, "null"]
+          nullable: true
+          format: double
+        status:
+          type: string
+          example: "ABERTA"
+
+    OrdemServicoUpdate:
+      type: object
+      properties:
+        cliente_id:
+          type: integer
+          format: int64
+        defeito:
+          type: [string, "null"]
+          nullable: true
+        servicos:
+          type: [string, "null"]
+          nullable: true
+        assinatura:
+          type: [string, "null"]
+          nullable: true
+        nome_servico:
+          type: [string, "null"]
+          nullable: true
+        telefone:
+          type: [string, "null"]
+          nullable: true
+        valor:
+          type: [number, "null"]
+          nullable: true
+          format: double
+        status:
+          type: string
+
+    TrocaCreate:
+      type: object
+      required:
+        - venda_id
+        - modelo_aparelho
+        - imei
+        - valor_avaliacao
+      properties:
+        venda_id:
+          type: integer
+          format: int64
+          example: 123
+        modelo_aparelho:
+          type: string
+          example: "iPhone 13 Pro"
+        imei:
+          type: string
+          example: "356789123456789"
+        valor_avaliacao:
+          type: number
+          format: double
+          example: 1500.00
+        condicao:
+          type: [string, "null"]
+          nullable: true
+          example: "USADO"
+        observacoes:
+          type: [string, "null"]
+          nullable: true
+          example: "Aparelho funcionando perfeitamente"
+
+    # ==================== MODEL SCHEMAS ====================
+    Usuario:
+      type: object
+      required: [id, email, nome, criado_em]
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
         email:
           type: string
           format: email
         nome:
           type: string
-        senha:
+        empresa_id:
+          type: integer
+          format: int64
+        criado_em:
           type: string
-          format: password
+          format: date-time
+          readOnly: true
 
     Cliente:
       type: object
@@ -1075,6 +1302,7 @@ components:
         email:
           type: [string, "null"]
           nullable: true
+          format: email
         criado_em:
           type: string
           format: date-time
@@ -1083,22 +1311,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-
-    ClienteCreate:
-      type: object
-      required: [nome]
-      properties:
-        nome:
-          type: string
-        telefone:
-          type: [string, "null"]
-          nullable: true
-        endereco:
-          type: [string, "null"]
-          nullable: true
-        email:
-          type: [string, "null"]
-          nullable: true
 
     Produto:
       type: object
@@ -1117,7 +1329,7 @@ components:
           type: integer
         categoria:
           type: string
-          example: CELULAR
+          example: "CELULAR"
         criado_em:
           type: string
           format: date-time
@@ -1126,20 +1338,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-
-    ProdutoCreate:
-      type: object
-      required: [nome, preco, estoque, categoria]
-      properties:
-        nome:
-          type: string
-        preco:
-          type: number
-          format: double
-        estoque:
-          type: integer
-        categoria:
-          type: string
 
     Venda:
       type: object
@@ -1176,25 +1374,6 @@ components:
           format: date-time
           readOnly: true
 
-    VendaCreate:
-      type: object
-      required: [produto_id, quantidade, tipo_pagamento]
-      properties:
-        produto_id:
-          type: integer
-          format: int64
-        cliente_id:
-          type: integer
-          format: int64
-          description: Envie 0 para Consumidor Final
-          default: 0
-        quantidade:
-          type: integer
-          minimum: 1
-        tipo_pagamento:
-          type: string
-          enum: [PIX, CARTAO, DINHEIRO, TRANSFERENCIA]
-
     OrdemServico:
       type: object
       required: [id, numero_ordem, cliente_id, status, criado_em, atualizado_em]
@@ -1219,6 +1398,16 @@ components:
         assinatura:
           type: [string, "null"]
           nullable: true
+        nome_servico:
+          type: [string, "null"]
+          nullable: true
+        telefone:
+          type: [string, "null"]
+          nullable: true
+        valor:
+          type: [number, "null"]
+          nullable: true
+          format: double
         status:
           type: string
         criado_em:
@@ -1230,43 +1419,53 @@ components:
           format: date-time
           readOnly: true
 
-    OrdemServicoCreate:
+    Troca:
       type: object
-      required: [cliente_id, status]
+      required: [id, venda_id, modelo_aparelho, imei, valor_avaliacao, criado_em]
       properties:
-        cliente_id:
+        id:
           type: integer
           format: int64
-        defeito:
-          type: [string, "null"]
-          nullable: true
-        servicos:
-          type: [string, "null"]
-          nullable: true
-        assinatura:
-          type: [string, "null"]
-          nullable: true
-        status:
+          readOnly: true
+        venda_id:
+          type: integer
+          format: int64
+        modelo_aparelho:
           type: string
-          example: ABERTA
+        imei:
+          type: string
+        valor_avaliacao:
+          type: number
+          format: double
+        condicao:
+          type: [string, "null"]
+          nullable: true
+        observacoes:
+          type: [string, "null"]
+          nullable: true
+        criado_em:
+          type: string
+          format: date-time
+          readOnly: true
 
-    OrdemServicoUpdate:
+    ResumoFinanceiro:
       type: object
       properties:
-        cliente_id:
+        total_vendas:
+          type: number
+          format: double
+        total_trocas:
+          type: number
+          format: double
+        total_ordens_servico:
+          type: number
+          format: double
+        quantidade_vendas:
           type: integer
-          format: int64
-        defeito:
-          type: [string, "null"]
-          nullable: true
-        servicos:
-          type: [string, "null"]
-          nullable: true
-        assinatura:
-          type: [string, "null"]
-          nullable: true
-        status:
-          type: string
+        quantidade_trocas:
+          type: integer
+        quantidade_ordens_servico:
+          type: integer
 
     Auditoria:
       type: object
@@ -1279,16 +1478,17 @@ components:
           format: int64
         acao:
           type: string
+          enum: [CREATE, UPDATE, DELETE]
         tabela:
           type: string
         registro_id:
           type: integer
           format: int64
         valores_antigos:
-          type: object
+          type: [object, "null"]
           nullable: true
         valores_novos:
-          type: object
+          type: [object, "null"]
           nullable: true
         horario:
           type: string

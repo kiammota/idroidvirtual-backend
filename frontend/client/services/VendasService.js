@@ -1,3 +1,4 @@
+import ENDPOINTS from "../endpoints.js";
 import { HttpClient } from "../http.js";
 import { Venda } from "../models/VendaModel.js";
 
@@ -12,7 +13,7 @@ class SaleServiceClass extends HttpClient {
     };
     if (params.total != null) body.total = Number(params.total);
 
-    const response = await this.post("/sales", body);
+    const response = await this.post(ENDPOINTS.SALES.BASE, body);
     if (response.success && response.data) {
       response.data = new Venda(response.data);
     }
@@ -28,7 +29,7 @@ class SaleServiceClass extends HttpClient {
       usuario_id: Number(usuarioId),
       motivo: motivo || "Cancelamento manual",
     };
-    return this.delete(`/sales/${id}`, body); // precisa que o HttpClient aceite body no DELETE
+    return this.delete(ENDPOINTS.SALES.BY_ID(id), body); // precisa que o HttpClient aceite body no DELETE
   }
 
   async deleteSale(id, usuarioId, motivo) {
@@ -36,7 +37,7 @@ class SaleServiceClass extends HttpClient {
   }
 
   async getByDay() {
-    const response = await this.get("/sales/dia");
+    const response = await this.get(ENDPOINTS.SALES.DIA);
     if (response.success && Array.isArray(response.data)) {
       response.data = response.data.map((data) => new Venda(data));
     }
@@ -44,7 +45,7 @@ class SaleServiceClass extends HttpClient {
   }
 
   async getByMonth() {
-    const response = await this.get("/sales/mes");
+    const response = await this.get(ENDPOINTS.SALES.MES);
     if (response.success && Array.isArray(response.data)) {
       response.data = response.data.map((data) => new Venda(data));
     }
