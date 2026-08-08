@@ -7,5 +7,5 @@ import (
 )
 
 func AuditoriaRoute(h *gin.RouterGroup, c *controllers.AuditoriaController) {
-	h.GET("/auditoria", c.ListarAuditorias)
+	h.GET("/audit", c.ListarAuditorias)
 }

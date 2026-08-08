@@ -22,11 +22,6 @@ func NewVendasController(vendaService *services.VendaService) *VendasController 
 	}
 }
 
-type CancelSaleInput struct {
-	UsuarioID int64  `json:"usuario_id" binding:"required"`
-	Motivo    string `json:"motivo"`
-}
-
 // POST /sales
 func (c *VendasController) Create(ctx *gin.Context) {
 	var input models.Venda
@@ -62,17 +57,30 @@ func (c *VendasController) Cancel(ctx *gin.Context) {
 		return
 	}
 
-	var input CancelSaleInput
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		gateways.Error(ctx, http.StatusBadRequest, "O campo usuario_id é obrigatório para cancelar")
+	// 1. Recupera o usuario_id injetado no contexto pelo Middleware de Auth
+	usuarioIDValue, exists := ctx.Get("usuario_id")
+	if !exists {
+		gateways.Error(ctx, http.StatusUnauthorized, "Usuário não autenticado")
 		return
 	}
 
+	// 2. Garante a conversão correta do tipo (int64)
+	usuarioID, ok := usuarioIDValue.(int64)
+	if !ok {
+		// Trata caso o middleware tenha salvo como float64 (comum no unmarshal de JSON do JWT)
+		if floatVal, okFloat := usuarioIDValue.(float64); okFloat {
+			usuarioID = int64(floatVal)
+		} else {
+			gateways.Error(ctx, http.StatusInternalServerError, "Erro ao processar identificador do usuário")
+			return
+		}
+	}
+
+	// 3. Executa a regra de negócio do serviço com os IDs validados
 	err = c.vendaService.CancelarVenda(
 		ctx.Request.Context(),
-		input.UsuarioID,
+		usuarioID,
 		vendaID,
-		input.Motivo,
 	)
 
 	if err != nil {

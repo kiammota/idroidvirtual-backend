@@ -9,10 +9,23 @@
   <link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
 </head>
 <body>
-  <header class="app-header">
+ <header class="app-header" style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px;">
+  <div style="display: flex; align-items: center; gap: 8px;">
     <button class="back-btn" id="btn-back" aria-label="Voltar">←</button>
     <h1>Financeiro &amp; Faturamento</h1>
-  </header>
+  </div>
+  
+  <!-- Botão apontando para a pasta auditoria/index.html -->
+  <button 
+    id="btn-auditoria" 
+    class="btn btn-outline btn-sm" 
+    onclick="location.href='../auditoria/index.html'"
+    style="display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+    <span>📋</span>
+    <span>Auditoria</span>
+  </button>
+</header>
+  
 
   <main class="app-main">
     <div class="tabs" id="fin-tabs">

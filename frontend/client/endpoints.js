@@ -52,10 +52,6 @@ export const ENDPOINTS = {
     BY_ID: (id) => `/sales/${id}`,
   },
 
-  // Auditoria
-  AUDITORIA: {
-    BASE: "/auditoria",
-  },
 
   // Trocas
   TROCAS: {
@@ -75,6 +71,9 @@ export const ENDPOINTS = {
     BASE: "/expenses",
     BY_ID: (id) => `/expenses/${id}`,
   },
+  AUDIT: {
+    BASE: "/audit"
+  }
 };
 
 export default ENDPOINTS;

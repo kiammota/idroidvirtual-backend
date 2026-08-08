@@ -874,7 +874,7 @@ paths:
   
 
   # ==================== AUDITORIA ====================
-  /auditoria:
+  /audit:
     get:
       tags: [Auditoria]
       operationId: listAuditoria

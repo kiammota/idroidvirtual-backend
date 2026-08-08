@@ -183,7 +183,6 @@ func (s *VendaService) CancelarVenda(
 	ctx context.Context,
 	usuarioID int64,
 	vendaID int64,
-	motivo string,
 ) error {
 
 	venda, err := s.vendaRepo.BuscarPorID(ctx, vendaID)
