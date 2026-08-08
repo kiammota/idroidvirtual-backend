@@ -256,6 +256,29 @@ CREATE TABLE movimentacoes_estoque (
     CONSTRAINT fk_movimentacao_produto FOREIGN KEY (produto_id) REFERENCES produtos(id)
 );
 
+CREATE TABLE despesas (
+    id BIGSERIAL PRIMARY KEY,
+    empresa_id BIGINT NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    categoria VARCHAR(50) NOT NULL,
+    valor NUMERIC(12,2) NOT NULL,
+    valor_pago NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    forma_pagamento VARCHAR(50),
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDENTE',
+    data_vencimento DATE NOT NULL,
+    data_pagamento DATE DEFAULT NULL,
+    comprovante_url TEXT DEFAULT NULL,
+    numero_documento VARCHAR(100) DEFAULT NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_despesa_empresa
+        FOREIGN KEY (empresa_id)
+        REFERENCES empresas(id)
+        ON DELETE CASCADE,
+    CONSTRAINT ck_despesa_valor
+        CHECK (valor >= 0),
+    CONSTRAINT ck_despesa_status
+        CHECK (status IN ('PENDENTE', 'PAGO', 'ATRASADO', 'CANCELADO'))
+);
 
 
 CREATE INDEX idx_auditoria_usuario

@@ -37,6 +37,8 @@ func main() {
 	ordemServicoRepo := repositories.NewOrdemServicoRepository(bd)
 	clienteRepo := repositories.NewClienteRepository(bd)
 	trocaRepo := repositories.NewTrocaRepository(bd)
+	financeiroRepo := repositories.NewFinanceiroRepository(bd)
+	despesaRepo := repositories.NewDespesaRepository(bd)
 
 	logger.OK("Repositórios carregados")
 
@@ -49,6 +51,8 @@ func main() {
 	vendaService := services.NewVendaService(bd, vendaRepo, produtoRepo, *usuarioRepo, clienteRepo, *auditoriaService)
 	ordensServicoService := services.NewOrdensServicoService(bd, ordemServicoRepo, &clienteRepo)
 	trocaService := services.NewTrocaService(trocaRepo)
+	financeiroService := services.NewFinanceiroService(financeiroRepo)
+	despesaService := services.NewDespesaService(despesaRepo)
 
 	logger.OK("Serviços carregados")
 
@@ -64,6 +68,8 @@ func main() {
 	closingController := controllers.NewClosingController(vendaService)
 	auditoriaController := controllers.NewAuditoriaController(auditoriaService)
 	trocaController := controllers.NewTrocaController(trocaService)
+	financeiroController := controllers.NewFinanceiroController(financeiroService)
+	despesaController := controllers.NewDespesaController(despesaService)
 
 	logger.OK("Controllers carregados")
 
@@ -112,6 +118,8 @@ func main() {
 	routes.ClosingRoutes(private, closingController)
 	routes.AuditoriaRoute(private, auditoriaController)
 	routes.RegistrarRotasTroca(private, trocaController)
+	routes.FinanceiroRoutes(private, *financeiroController)
+	routes.RegistrarDespesas(private, *despesaController)
 
 	logger.OK("Rotas registradas com sucesso")
 

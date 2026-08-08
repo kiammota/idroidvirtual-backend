@@ -106,8 +106,8 @@ func (c *OrdemServicoController) Atualizar(ctx *gin.Context) {
 		gateways.Error(ctx, http.StatusBadRequest, "id inválido")
 		return
 	}
+	var patch models.OrdemServico
 
-	var patch services.OrdemServicoPatch
 	if !gateways.BindJSON(ctx, &patch) {
 		return
 	}

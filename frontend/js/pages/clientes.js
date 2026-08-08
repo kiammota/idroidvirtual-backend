@@ -55,14 +55,19 @@ async function init() {
     }
     el.innerHTML = list
       .map(
-        (c) => `
+        (c) => {
+          const nome = c.nome || 'NÃO INFORMADO';
+          const tel = formatPhone(c.telefone) || '—';
+          const extra = c.email || c.endereco || 'NÃO INFORMADO';
+          return `
       <div class="card list-item" data-id="${c.id}" style="cursor:pointer">
         <div class="info">
-          <div class="title">${c.nome}</div>
-          <div class="sub">${formatPhone(c.telefone) || '—'} ${c.endereco ? '· ' + c.endereco : ''}</div>
+          <div class="title" title="${String(nome).replace(/"/g, '&quot;')}">${nome}</div>
+          <div class="sub">${tel} · ${extra}</div>
         </div>
       </div>
-    `
+    `;
+        }
       )
       .join('');
 

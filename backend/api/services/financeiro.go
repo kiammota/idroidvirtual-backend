@@ -1,60 +1,52 @@
 package services
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"time"
+import (
+	"context"
+	"fmt"
+	"time"
 
-// 	"backend/models"
-// 	"backend/repositories"
-// )
+	"backend/models"
+	"backend/repositories"
+)
 
-// type FinanceiroService struct {
-// 	vendaRepo repositories.VendaRepository
-// 	osRepo    repositories.OrdemServicoRepository
-// }
+type FinanceiroService struct {
+	financeiroRepo *repositories.FinanceiroRepository
+}
 
-// func NewFinanceiroService(
-// 	vendaRepo repositories.VendaRepository,
-// 	osRepo repositories.OrdemServicoRepository,
-// ) *FinanceiroService {
-// 	return &FinanceiroService{
-// 		vendaRepo: vendaRepo,
-// 		osRepo:    osRepo,
-// 	}
-// }
+func NewFinanceiroService(financeiroRepo *repositories.FinanceiroRepository) *FinanceiroService {
+	return &FinanceiroService{
+		financeiroRepo: financeiroRepo,
+	}
+}
 
-// // ObterBalancoDiario calcula o caixa do dia atual para o fechamento de turno
-// func (s *FinanceiroService) ObterBalancoDiario(ctx context.Context) (*models.ResumoFinanceiro, error) {
-// 	agora := time.Now()
-// 	inicioDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 0, 0, 0, 0, agora.Location())
-// 	fimDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 23, 59, 59, 999999999, agora.Location())
+// FechamentoPorPeriodo busca o resumo do dia atual (00:00:00 até 23:59:59)
+func (s *FinanceiroService) FechamentoPorPeriodo(ctx context.Context) (*models.ResumoFinanceiro, error) {
+	agora := time.Now()
+	inicioDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 0, 0, 0, 0, agora.Location())
+	fimDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 23, 59, 59, 999999999, agora.Location())
 
-// 	return s.ObterBalancoPorPeriodo(ctx, inicioDia, fimDia)
-// }
+	return s.ObterFinanceiroPorIntervalo(ctx, inicioDia, fimDia)
+}
 
-// // ObterBalancoPorPeriodo busca os dados consolidados sem alterar nada no banco
-// func (s *FinanceiroService) ObterBalancoPorPeriodo(ctx context.Context, inicio, fim time.Time) (*models.ResumoFinanceiro, error) {
-// 	// 1. Busca total de Vendas
-// 	totalVendas, err := s.vendaRepo.ObterFaturamentoPorPeriodo(ctx, inicio, fim)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("erro ao buscar faturamento de vendas: %w", err)
-// 	}
+// ObterFinanceiroDoMes calcula do primeiro dia do mês até o instante atual
+func (s *FinanceiroService) ObterFinanceiroDoMes(ctx context.Context) (*models.ResumoFinanceiro, error) {
+	agora := time.Now()
+	inicioMes := time.Date(agora.Year(), agora.Month(), 1, 0, 0, 0, 0, agora.Location())
+	fimMes := inicioMes.AddDate(0, 1, 0).Add(-time.Nanosecond)
 
-// 	// 2. Busca total de Despesas Pagas
-// 	if err != nil {
-// 		return nil, fmt.Errorf("erro ao buscar despesas: %w", err)
-// 	}
+	return s.ObterFinanceiroPorIntervalo(ctx, inicioMes, fimMes)
+}
 
-// 	// 3. Monta o DTO de retorno
+// ObterFinanceiroPorIntervalo valida o período de datas e delega a busca otimizada ao repositório
+func (s *FinanceiroService) ObterFinanceiroPorIntervalo(ctx context.Context, inicio, fim time.Time) (*models.ResumoFinanceiro, error) {
+	if inicio.After(fim) {
+		return nil, fmt.Errorf("a data inicial (%s) não pode ser posterior à data final (%s)", inicio.Format("2006-01-02"), fim.Format("2006-01-02"))
+	}
 
-// 	resumo := &models.ResumoFinanceiro{
-// 		PeriodoInicio: inicio,
-// 		PeriodoFim:    fim,
-// 		TotalVendas:   totalVendas,
-// 		TotalDespesas: totalDespesas,
-// 		LucroLiquido:  lucro,
-// 	}
+	resumo, err := s.financeiroRepo.ObterResumoPorPeriodo(ctx, inicio, fim)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao calcular resumo financeiro: %w", err)
+	}
 
-// 	return resumo, nil
-// }
+	return resumo, nil
+}

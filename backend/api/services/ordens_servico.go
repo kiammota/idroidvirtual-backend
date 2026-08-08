@@ -5,21 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"backend/models"
 	"backend/repositories"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-type OrdemServicoPatch struct {
-	NumeroOrdem *int64  `json:"numero_ordem,omitempty"`
-	ClienteID   *int64  `json:"cliente_id,omitempty"`
-	Defeito     *string `json:"defeito,omitempty"`
-	Servicos    *string `json:"servicos,omitempty"`
-	Assinatura  *string `json:"assinatura,omitempty"`
-	Status      *string `json:"status,omitempty"`
-}
 
 type OrdensServicoService struct {
 	Pool              *pgxpool.Pool
@@ -37,6 +29,14 @@ func NewOrdensServicoService(
 		OrdensServicoRepo: ordemRepo,
 		ClienteRepo:       clienteRepo,
 	}
+}
+
+func (s *OrdensServicoService) ListarPorPeriodo(ctx context.Context, inicio, fim time.Time) ([]models.OrdemServico, error) {
+	if inicio.After(fim) {
+		return nil, errors.New("a data inicial não pode ser maior que a data final")
+	}
+
+	return s.OrdensServicoRepo.ListarPorPeriodo(ctx, inicio, fim)
 }
 
 // POST /service-orders
@@ -173,7 +173,7 @@ func (s *OrdensServicoService) BuscarPorID(ctx context.Context, id int64) (*mode
 }
 
 // PATCH /service-orders/{id}
-func (s *OrdensServicoService) Atualizar(ctx context.Context, id int64, patch *OrdemServicoPatch) (err error) {
+func (s *OrdensServicoService) Atualizar(ctx context.Context, id int64, patch *models.OrdemServico) (err error) {
 	if id <= 0 {
 		return errors.New("id inválido")
 	}
@@ -198,25 +198,25 @@ func (s *OrdensServicoService) Atualizar(ctx context.Context, id int64, patch *O
 
 	atualizado := *existente
 
-	if patch.NumeroOrdem != nil {
-		if *patch.NumeroOrdem <= 0 {
+	if patch.NumeroOrdem != 0 {
+		if *&patch.NumeroOrdem <= 0 {
 			return errors.New("número de ordem inválido")
 		}
-		atualizado.NumeroOrdem = *patch.NumeroOrdem
+		atualizado.NumeroOrdem = *&patch.NumeroOrdem
 	}
 
-	if patch.ClienteID != nil {
-		if *patch.ClienteID <= 0 {
+	if patch.ClienteID != 0 {
+		if *&patch.ClienteID <= 0 {
 			return errors.New("cliente inválido")
 		}
-		cliente, err := s.ClienteRepo.BuscarPorIDTx(ctx, tx, *patch.ClienteID)
+		cliente, err := s.ClienteRepo.BuscarPorIDTx(ctx, tx, *&patch.ClienteID)
 		if err != nil {
 			return err
 		}
 		if cliente == nil {
 			return errors.New("cliente não encontrado")
 		}
-		atualizado.ClienteID = *patch.ClienteID
+		atualizado.ClienteID = *&patch.ClienteID
 	}
 
 	if patch.Defeito != nil {
@@ -231,8 +231,8 @@ func (s *OrdensServicoService) Atualizar(ctx context.Context, id int64, patch *O
 		atualizado.Assinatura = patch.Assinatura
 	}
 
-	if patch.Status != nil {
-		atualizado.Status = *patch.Status
+	if patch.Status != "" {
+		atualizado.Status = *&patch.Status
 	}
 
 	atualizado.ID = id

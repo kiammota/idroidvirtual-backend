@@ -18,7 +18,6 @@
     <div class="tabs" id="est-tabs">
       <button class="tab active" data-tab="produtos">Produtos</button>
       <button class="tab" data-tab="entrada">Entrada</button>
-      <button class="tab" data-tab="brindes">Brindes</button>
     </div>
 
     <!-- TAB PRODUTOS -->
@@ -48,9 +47,9 @@
       </div>
 
       <!-- Lista de produtos da categoria selecionada -->
-      <div id="est-list-header" class="card-title mt-2" style="display:none;">
-        <span id="cat-title">Produtos</span>
-        <button class="btn btn-outline btn-sm" id="btn-voltar-cats" style="float:right;font-size:0.8rem">← Categorias</button>
+      <div id="est-list-header" class="list-header mt-2" style="display:none;">
+        <span id="cat-title" class="list-header-title">Produtos</span>
+        <button class="btn btn-outline btn-sm" id="btn-voltar-cats">← Categorias</button>
       </div>
       <div id="est-list">
         <div class="empty-state"><div class="icon">📦</div><p>Selecione uma categoria acima.</p></div>
@@ -85,29 +84,6 @@
       </form>
     </section>
 
-    <!-- TAB BRINDES -->
-    <section id="tab-brindes" class="hidden">
-      <p class="text-muted mb-2" style="font-size:0.9rem">Controle de perdas operacionais e saída de brindes.</p>
-      <form id="form-brinde">
-        <div class="form-group">
-          <label for="bri-produto">Produto / Descrição *</label>
-          <input type="text" id="bri-produto" required>
-        </div>
-        <div class="form-group">
-          <label for="bri-qtd">Quantidade *</label>
-          <input type="number" id="bri-qtd" value="1" min="1" required>
-        </div>
-        <div class="form-group">
-          <label for="bri-motivo">Motivo</label>
-          <input type="text" id="bri-motivo" placeholder="Brinde, perda, troca…">
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">Registrar Saída de Brinde</button>
-      </form>
-      <div class="card mt-2">
-        <div class="card-title">Histórico recente</div>
-        <div id="bri-hist" class="text-muted" style="font-size:0.85rem">Nenhuma movimentação.</div>
-      </div>
-    </section>
   </main>
 
   <script type="module" src="../../js/pages/estoque.js"></script>

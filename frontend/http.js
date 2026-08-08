@@ -45,6 +45,7 @@ export class HttpClient {
 
       if (response.status === 401) {
         this.clearToken();
+        // Notifica só em 401 (sessão); demais erros ficam a cargo da página
         if (typeof NotificationService !== 'undefined') {
           NotificationService.error(
             'Sua sessão expirou. Por favor, faça login novamente.',
@@ -55,25 +56,11 @@ export class HttpClient {
       }
 
       const responseData = await response.json();
-
-      if (!response.ok && !responseData.success) {
-        if (typeof NotificationService !== 'undefined') {
-          NotificationService.error(
-            responseData.message || 'Erro na requisição',
-            `Erro ${response.status}`
-          );
-        }
-      }
-
+      // Não dispara toast aqui — evita notificação duplicada com as páginas
       return responseData;
     } catch (error) {
-      if (typeof NotificationService !== 'undefined') {
-        NotificationService.error(
-          error.message || 'Erro de conexão com o servidor',
-          'Erro de Rede'
-        );
-      }
-      return { success: false, data: null, message: error.message };
+      // Erro de rede: retorna para a página tratar (evita toast duplo)
+      return { success: false, data: null, message: error.message || 'Erro de conexão com o servidor' };
     }
   }
 

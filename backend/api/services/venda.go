@@ -12,14 +12,6 @@ import (
 	"backend/repositories"
 )
 
-// FechamentoResponse consolida os dados das vendas para os relatórios
-type FechamentoResponse struct {
-	TotalVendas int            `json:"total_vendas"`
-	Faturamento float64        `json:"faturamento"`
-	Periodo     string         `json:"periodo"`
-	Vendas      []models.Venda `json:"vendas"`
-}
-
 type VendaService struct {
 	pool        *pgxpool.Pool
 	auditoria   AuditoriaService
@@ -48,7 +40,7 @@ func NewVendaService(
 }
 
 // FechamentoDoDia consolida total e faturamento do dia atual
-func (s *VendaService) FechamentoDoDia(ctx context.Context) (*FechamentoResponse, error) {
+func (s *VendaService) FechamentoDoDia(ctx context.Context) (*models.Fechamento, error) {
 	agora := time.Now()
 	inicioDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 0, 0, 0, 0, agora.Location())
 	fimDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 23, 59, 59, 999999999, agora.Location())
@@ -65,7 +57,7 @@ func (s *VendaService) FechamentoDoDia(ctx context.Context) (*FechamentoResponse
 		}
 	}
 
-	return &FechamentoResponse{
+	return &models.Fechamento{
 		TotalVendas: len(vendas),
 		Faturamento: faturamento,
 		Periodo:     inicioDia.Format("02/01/2006"),
@@ -74,7 +66,7 @@ func (s *VendaService) FechamentoDoDia(ctx context.Context) (*FechamentoResponse
 }
 
 // FechamentoDoMes consolida total e faturamento do mês atual
-func (s *VendaService) FechamentoDoMes(ctx context.Context) (*FechamentoResponse, error) {
+func (s *VendaService) FechamentoDoMes(ctx context.Context) (*models.Fechamento, error) {
 	agora := time.Now()
 	inicioMes := time.Date(agora.Year(), agora.Month(), 1, 0, 0, 0, 0, agora.Location())
 	fimMes := inicioMes.AddDate(0, 1, 0).Add(-time.Nanosecond)
@@ -91,12 +83,25 @@ func (s *VendaService) FechamentoDoMes(ctx context.Context) (*FechamentoResponse
 		}
 	}
 
-	return &FechamentoResponse{
+	return &models.Fechamento{
 		TotalVendas: len(vendas),
 		Faturamento: faturamento,
 		Periodo:     inicioMes.Format("01/2006"),
 		Vendas:      vendas,
 	}, nil
+}
+
+func (s *VendaService) ListarPorPeriodo(ctx context.Context, inicio time.Time, fim time.Time) ([]models.Venda, error) {
+	if inicio.After(fim) {
+		return nil, errors.New("a data inicial não pode ser posterior à data final")
+	}
+
+	vendas, err := s.vendaRepo.BuscarPorPeriodo(ctx, inicio, fim)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar vendas por período: %w", err)
+	}
+
+	return vendas, nil
 }
 
 func (s *VendaService) ObterVendasDoDia(ctx context.Context) ([]models.Venda, error) {
@@ -115,7 +120,6 @@ func (s *VendaService) ObterVendasDoMes(ctx context.Context) ([]models.Venda, er
 	return s.vendaRepo.BuscarPorPeriodo(ctx, inicioMes, fimMes)
 }
 
-// ExecutarVenda realiza a venda, baixa o estoque e registra na auditoria
 // ExecutarVenda realiza a venda, baixa o estoque e registra na auditoria.
 // clienteID = 0 significa Consumidor Final (opcional).
 func (s *VendaService) ExecutarVenda(
@@ -146,8 +150,11 @@ func (s *VendaService) ExecutarVenda(
 		return nil, errors.New("produto não encontrado")
 	}
 	if produto.Estoque < quantidade {
+		if produto.Estoque == 0 {
+			return nil, errors.New("O estoque para este produto está zerado!")
+		}
 		return nil, fmt.Errorf(
-			"estoque insuficiente (disponível: %d, solicitado: %d)",
+			"O Estoque está insuficiente! (disponível: %d, solicitado: %d)",
 			produto.Estoque, quantidade,
 		)
 	}

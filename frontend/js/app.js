@@ -57,7 +57,21 @@ export function setCurrentUser(user) {
   sessionStorage.setItem('gv_user', JSON.stringify(user));
 }
 
+const _toastRecent = new Map();
+
 export function showToast(message, type = 'info') {
+  const key = `${type}::${String(message || '').trim()}`;
+  const now = Date.now();
+  const last = _toastRecent.get(key) || 0;
+  if (now - last < 2500) return; // evita notificações duplicadas
+  _toastRecent.set(key, now);
+  if (_toastRecent.size > 30) {
+    const cutoff = now - 5000;
+    for (const [k, t] of _toastRecent) {
+      if (t < cutoff) _toastRecent.delete(k);
+    }
+  }
+
   let container = document.querySelector('.toast-container');
   if (!container) {
     container = document.createElement('div');

@@ -14,9 +14,7 @@ class AuthServiceClass extends HttpClient {
 
     if (response.success && response.data) {
       this.setToken(response.data);
-      if (typeof NotificationService !== "undefined") {
-        NotificationService.success("Login realizado com sucesso");
-      }
+      // Toast de sucesso fica a cargo da página de login (evita duplicata)
     }
 
     return response;
@@ -27,9 +25,7 @@ class AuthServiceClass extends HttpClient {
    */
   logout() {
     this.clearToken();
-    if (typeof NotificationService !== "undefined") {
-      NotificationService.success("Logout realizado");
-    }
+    // Toast de logout fica a cargo da página (evita duplicata)
   }
 
   /**

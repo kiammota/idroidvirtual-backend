@@ -2,26 +2,35 @@ package models
 
 import "time"
 
+type DetalhePagamento struct {
+	FormaPagamento string  `json:"forma_pagamento"` // PIX, CARTAO_CREDITO, DINHEIRO
+	Total          float64 `json:"total"`
+}
+
 type ResumoFinanceiro struct {
 	PeriodoInicio time.Time `json:"periodo_inicio"`
 	PeriodoFim    time.Time `json:"periodo_fim"`
 
 	// Vendas de Produtos
-	TotalVendas      float64 `json:"total_vendas"`      // R$ em vendas concluídas
-	QuantidadeVendas int     `json:"quantidade_vendas"` // Quantidade de vendas realizadas
+	TotalVendas      float64 `json:"total_vendas"`
+	QuantidadeVendas int     `json:"quantidade_vendas"`
+	TicketMedioVenda float64 `json:"ticket_medio_venda"`
 
 	// Ordens de Serviço
-	TotalServicos float64 `json:"total_servicos"` // R$ em OS concluídas
-	QuantidadeOS  int     `json:"quantidade_os"`  // Quantidade de OS finalizadas
+	TotalServicos      float64 `json:"total_servicos"`
+	QuantidadeOS       int     `json:"quantidade_os"`
+	TicketMedioServico float64 `json:"ticket_medio_servico"`
 
-	// Faturamento Bruto
-	FaturamentoBruto float64 `json:"faturamento_bruto"` // Total Vendas + Total Serviços
+	// Faturamento e Formas de Pagamento
+	FaturamentoBruto float64            `json:"faturamento_bruto"`
+	FormasPagamento  []DetalhePagamento `json:"formas_pagamento"`
 
-	// Custos e Perdas
-	TotalDespesas       float64 `json:"total_despesas"`        // Aluguel, luz, salários, etc.
-	ValorEstoquePerdido float64 `json:"valor_estoque_perdido"` // R$ perdido em avarias/furtos
-	QuantidadePerdas    int     `json:"quantidade_perdas"`     // Itens perdidos no período
+	// Custos e Deduções
+	TotalDespesas       float64 `json:"total_despesas"`
+	ValorEstoquePerdido float64 `json:"valor_estoque_perdido"`
+	QuantidadePerdas    int     `json:"quantidade_perdas"`
 
-	// Resultado Financeiro Real
-	LucroLiquido float64 `json:"lucro_liquido"` // Faturamento Bruto - Despesas - Perdas
+	// Indicadores
+	LucroLiquido float64 `json:"lucro_liquido"`
+	MargemLucro  float64 `json:"margem_lucro"` // Em porcentagem (%)
 }

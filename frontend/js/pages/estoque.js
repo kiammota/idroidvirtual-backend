@@ -17,16 +17,16 @@ async function init() {
   document.getElementById('btn-back').onclick = () => goBack();
 
   let produtos = [];
-  let historico = [];
   let categoriaAtual = null;
 
-  // Tabs
+  // Tabs (apenas Produtos e Entrada)
   document.querySelectorAll('#est-tabs .tab').forEach((tab) => {
     tab.onclick = () => {
       document.querySelectorAll('#est-tabs .tab').forEach((t) => t.classList.remove('active'));
       tab.classList.add('active');
-      ['produtos', 'entrada', 'brindes'].forEach((t) => {
-        document.getElementById('tab-' + t).classList.toggle('hidden', tab.dataset.tab !== t);
+      ['produtos', 'entrada'].forEach((t) => {
+        const el = document.getElementById('tab-' + t);
+        if (el) el.classList.toggle('hidden', tab.dataset.tab !== t);
       });
     };
   });
@@ -54,7 +54,7 @@ async function init() {
   function renderLista(lista, titulo) {
     const el = document.getElementById('est-list');
     document.getElementById('cat-title').textContent = titulo;
-    document.getElementById('est-list-header').style.display = 'block';
+    document.getElementById('est-list-header').style.display = 'flex';
     document.getElementById('cat-grid').style.display = 'none';
 
     if (!lista.length) {
@@ -67,8 +67,8 @@ async function init() {
         (p) => `
       <div class="card list-item">
         <div class="info">
-          <div class="title">${p.nome}</div>
-          <div class="sub">Estoque: ${p.estoque}</div>
+          <div class="title" title="${(p.nome || '').replace(/"/g, '&quot;')}">${p.nome || '—'}</div>
+          <div class="sub">Estoque: ${p.estoque ?? 0}</div>
         </div>
         <div class="fw-bold text-primary">${formatBRL(p.preco)}</div>
       </div>
@@ -133,40 +133,6 @@ async function init() {
     } catch (err) {
       showToast(err.message || 'Erro de conexão', 'error');
     }
-  };
-
-  // ===== BRINDES (local) =====
-  document.getElementById('form-brinde').onsubmit = (e) => {
-    e.preventDefault();
-    const item = {
-      produto: document.getElementById('bri-produto').value.trim(),
-      qtd: parseInt(document.getElementById('bri-qtd').value) || 1,
-      motivo: document.getElementById('bri-motivo').value.trim() || 'Brinde',
-      data: new Date().toLocaleString('pt-BR'),
-    };
-
-    if (!item.produto) {
-      showToast('Informe o produto', 'error');
-      return;
-    }
-
-    historico.unshift(item);
-    document.getElementById('bri-hist').innerHTML = historico
-      .map(
-        (h) => `
-        <div class="list-item">
-          <div class="info">
-            <div class="title">${h.produto} ×${h.qtd}</div>
-            <div class="sub">${h.motivo} · ${h.data}</div>
-          </div>
-        </div>
-      `
-      )
-      .join('');
-
-    showToast('Saída de brinde registrada', 'success');
-    document.getElementById('form-brinde').reset();
-    document.getElementById('bri-qtd').value = 1;
   };
 
   // ===== CARREGAR =====
