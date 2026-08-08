@@ -20,34 +20,50 @@ const (
 )
 
 type AuditoriaService struct {
-	repo *repositories.AuditoriaRepository
+	repo        *repositories.AuditoriaRepository
+	empresaRepo *repositories.EmpresaRepository
 }
 
-func NewAuditoriaService(repo *repositories.AuditoriaRepository) *AuditoriaService {
-	return &AuditoriaService{repo: repo}
+func NewAuditoriaService(repo *repositories.AuditoriaRepository, empresaRepo *repositories.EmpresaRepository) *AuditoriaService {
+	return &AuditoriaService{
+		repo:        repo,
+		empresaRepo: empresaRepo, // Corrigido: agora armazena a referência
+	}
 }
 
-// Log registra ações genéricas de auditoria
+// log registra ações genéricas de auditoria obtendo o empresaID dinamicamente
 func (s *AuditoriaService) log(
 	ctx context.Context,
 	usuarioID int64,
 	acao string,
 ) error {
+	empresa, err := s.empresaRepo.BuscarPorUsuarioID(ctx, usuarioID)
+	if err != nil {
+		return fmt.Errorf("falha ao identificar empresa do usuário para auditoria: %w", err)
+	}
+
 	audit := models.Auditoria{
+		EmpresaID: empresa.ID,
 		UsuarioID: usuarioID,
 		Acao:      acao,
 	}
 	return s.repo.Criar(ctx, audit)
 }
 
-// LogTx registra ações de auditoria dentro de uma transação ativa
+// logTx registra ações de auditoria dentro de uma transação ativa
 func (s *AuditoriaService) logTx(
 	ctx context.Context,
 	tx pgx.Tx,
 	usuarioID int64,
 	acao string,
 ) error {
+	empresa, err := s.empresaRepo.BuscarPorUsuarioID(ctx, usuarioID)
+	if err != nil {
+		return fmt.Errorf("falha ao identificar empresa do usuário para auditoria: %w", err)
+	}
+
 	audit := models.Auditoria{
+		EmpresaID: empresa.ID,
 		UsuarioID: usuarioID,
 		Acao:      acao,
 	}

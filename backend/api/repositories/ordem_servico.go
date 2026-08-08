@@ -25,25 +25,25 @@ func NewOrdemServicoRepository(pool *pgxpool.Pool) *OrdemServicoRepository {
 
 func (r *OrdemServicoRepository) Criar(ctx context.Context, os *models.OrdemServico) error {
 	query := `
-		INSERT INTO ordens_servico (cliente_id, nome_servico, defeito, servicos, valor, assinatura, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO ordens_servico (usuario_id, cliente_id, nome_servico, defeito, servicos, valor, assinatura, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, numero_ordem, criado_em, atualizado_em
 	`
 	return r.Pool.QueryRow(
 		ctx, query,
-		os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Assinatura, os.Status,
+		os.UsuarioID, os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Assinatura, os.Status,
 	).Scan(&os.ID, &os.NumeroOrdem, &os.CriadoEm, &os.AtualizadoEm)
 }
 
 func (r *OrdemServicoRepository) CriarTx(ctx context.Context, tx pgx.Tx, os *models.OrdemServico) error {
 	query := `
-		INSERT INTO ordens_servico (cliente_id, nome_servico, defeito, servicos, valor, assinatura, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO ordens_servico (usuario_id, cliente_id, nome_servico, defeito, servicos, valor, assinatura, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, numero_ordem, criado_em, atualizado_em
 	`
 	return tx.QueryRow(
 		ctx, query,
-		os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Assinatura, os.Status,
+		os.UsuarioID, os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Assinatura, os.Status,
 	).Scan(&os.ID, &os.NumeroOrdem, &os.CriadoEm, &os.AtualizadoEm)
 }
 

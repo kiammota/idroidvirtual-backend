@@ -42,7 +42,8 @@ func (c *OrdemServicoController) Criar(ctx *gin.Context) {
 		return
 	}
 
-	err := c.Service.Criar(ctx, &ordem)
+	// 3. Executa a criação já com os IDs devidamente preenchidos
+	err := c.Service.Criar(ctx.Request.Context(), &ordem)
 	if err != nil {
 		gateways.Error(ctx, http.StatusBadRequest, err.Error())
 		return

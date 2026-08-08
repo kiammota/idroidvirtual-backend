@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"backend/models"
@@ -19,20 +20,26 @@ func NewAuditoriaRepository(db *pgxpool.Pool) *AuditoriaRepository {
 }
 
 func (r *AuditoriaRepository) Criar(ctx context.Context, audit models.Auditoria) error {
+	if audit.EmpresaID == 0 {
+		return errors.New("empresa inválida para registrar auditoria")
+	}
 	query := `
-		INSERT INTO auditorias (usuario_id, acao, horario) 
-		VALUES ($1, $2, NOW())
+		INSERT INTO auditorias (empresa_id, usuario_id, acao, horario) 
+		VALUES ($1, $2, $3, NOW())
 	`
-	_, err := r.db.Exec(ctx, query, audit.UsuarioID, audit.Acao)
+	_, err := r.db.Exec(ctx, query, audit.EmpresaID, audit.UsuarioID, audit.Acao)
 	return err
 }
 
 func (r *AuditoriaRepository) CriarTx(ctx context.Context, tx pgx.Tx, audit models.Auditoria) error {
+	if audit.EmpresaID == 0 {
+		return errors.New("empresa inválida para registrar auditoria")
+	}
 	query := `
-		INSERT INTO auditorias (usuario_id, acao, horario) 
-		VALUES ($1, $2, NOW())
+		INSERT INTO auditorias (empresa_id, usuario_id, acao, horario) 
+		VALUES ($1, $2, $3, NOW())
 	`
-	_, err := tx.Exec(ctx, query, audit.UsuarioID, audit.Acao)
+	_, err := tx.Exec(ctx, query, audit.EmpresaID, audit.UsuarioID, audit.Acao)
 	return err
 }
 func (r *AuditoriaRepository) BuscarPorPeriodo(ctx context.Context, inicio, fim time.Time, limit, offset int) ([]models.Auditoria, error) {

@@ -238,7 +238,7 @@ CREATE TABLE auditorias (
     id BIGSERIAL PRIMARY KEY,
     empresa_id BIGINT NOT NULL,
     usuario_id BIGINT NOT NULL,
-    acao VARCHAR(50) NOT NULL,
+    acao TEXT NOT NULL,
     horario TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_auditoria_usuario
         FOREIGN KEY(usuario_id)

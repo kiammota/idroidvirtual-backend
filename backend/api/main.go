@@ -30,6 +30,7 @@ func main() {
 	// 2. Repositórios
 	logger.Log("Inicializando repositórios")
 
+	empresaRepo := repositories.NewEmpresaRepository(bd)
 	auditoriaRepo := repositories.NewAuditoriaRepository(bd)
 	usuarioRepo := repositories.NewUsuarioRepository(bd)
 	vendaRepo := repositories.NewVendaRepository(bd)
@@ -44,7 +45,7 @@ func main() {
 
 	// 3. Serviços
 	logger.Log("Inicializando serviços")
-	auditoriaService := services.NewAuditoriaService(auditoriaRepo)
+	auditoriaService := services.NewAuditoriaService(auditoriaRepo, empresaRepo)
 	usuarioService := services.NewUsuarioService(usuarioRepo)
 	tokenService := services.NewTokenService(cfg.ChaveJWT)
 	loginService := services.NewLoginService(usuarioRepo, tokenService)
