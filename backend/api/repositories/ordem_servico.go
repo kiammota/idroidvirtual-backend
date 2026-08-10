@@ -16,7 +16,9 @@ type OrdemServicoRepository struct {
 }
 
 func NewOrdemServicoRepository(pool *pgxpool.Pool) *OrdemServicoRepository {
-	return &OrdemServicoRepository{Pool: pool}
+	return &OrdemServicoRepository{
+		Pool: pool,
+	}
 }
 
 // ============================================================================
@@ -103,20 +105,49 @@ func (r *OrdemServicoRepository) DeletarTx(ctx context.Context, tx pgx.Tx, id in
 
 func (r *OrdemServicoRepository) BuscarPorID(ctx context.Context, id int64) (*models.OrdemServico, error) {
 	query := `
-		SELECT id, numero_ordem, cliente_id, nome_servico, defeito, servicos, valor, assinatura, status, criado_em, atualizado_em
-		FROM ordens_servico
-		WHERE id = $1
+		SELECT
+			os.id,
+			os.numero_ordem,
+			os.cliente_id,
+			os.nome_servico,
+			os.defeito,
+			os.servicos,
+			os.valor,
+			os.assinatura,
+			os.status,
+			os.criado_em,
+			os.atualizado_em,
+			c.telefone
+		FROM ordens_servico os
+		JOIN clientes c ON c.id = os.cliente_id
+		WHERE os.id = $1
 	`
+
 	var os models.OrdemServico
+
 	err := r.Pool.QueryRow(ctx, query, id).Scan(
-		&os.ID, &os.NumeroOrdem, &os.ClienteID, &os.NomeServico, &os.Defeito, &os.Servicos, &os.Valor, &os.Assinatura, &os.Status, &os.CriadoEm, &os.AtualizadoEm,
+		&os.ID,
+		&os.NumeroOrdem,
+		&os.ClienteID,
+		&os.NomeServico,
+		&os.Defeito,
+		&os.Servicos,
+		&os.Valor,
+		&os.Assinatura,
+		&os.Status,
+		&os.CriadoEm,
+		&os.AtualizadoEm,
+		&os.ClienteTelefone,
 	)
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
+
 		return nil, err
 	}
+
 	return &os, nil
 }
 
