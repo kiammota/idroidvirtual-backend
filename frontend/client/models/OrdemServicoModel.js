@@ -3,6 +3,7 @@ export class OrdemServico {
         this.id = data.id ?? 0;
         this.numero_ordem = data.numero_ordem ?? 0;
         this.cliente_id = data.cliente_id ?? 0;
+        this.usuario_id = data.usuario_id ?? 0; // <-- Adicionado aqui
         this.nome_servico = data.nome_servico ?? "";
         this.defeito = data.defeito ?? null;
         this.servicos = data.servicos ?? null;
@@ -22,6 +23,9 @@ export class OrdemServico {
     validar() {
         const erros = [];
 
+        if (!this.usuario_id || Number(this.usuario_id) <= 0) {
+            erros.push("O usuário é obrigatório.");
+        }
 
         if (!this.nome_servico || !String(this.nome_servico).trim()) {
             erros.push("O nome do serviço é obrigatório.");

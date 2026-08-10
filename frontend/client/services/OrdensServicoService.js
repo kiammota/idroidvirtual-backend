@@ -4,13 +4,19 @@ import { OrdemServico } from "../models/OrdemServicoModel.js";
 
 class ServiceOrderServiceClass extends HttpClient {
   async create(params) {
+    // Pega o usuario_id vindo do parâmetro ou direto do Token JWT
+    const usuarioId = params.usuario_id || this.getUsuarioId();
+
     const body = {
       cliente_id: params.cliente_id,
+      usuario_id: usuarioId ? Number(usuarioId) : null, // <-- Preenchido via JWT caso não passe no params
       defeito: params.defeito ?? null,
       servicos: params.servicos ?? null,
       assinatura: params.assinatura ?? null,
       status: params.status || "ABERTA",
     };
+
+    if (params.empresa_id != null) body.empresa_id = Number(params.empresa_id);
     if (params.telefone != null) body.telefone = params.telefone;
     if (params.nome_servico != null) body.nome_servico = params.nome_servico;
     if (params.valor != null) body.valor = Number(params.valor);
@@ -41,6 +47,9 @@ class ServiceOrderServiceClass extends HttpClient {
   async update(params) {
     const id = params.id;
     const body = {};
+
+    if (params.usuario_id !== undefined) body.usuario_id = Number(params.usuario_id);
+    if (params.empresa_id !== undefined) body.empresa_id = Number(params.empresa_id);
     if (params.defeito !== undefined) body.defeito = params.defeito;
     if (params.servicos !== undefined) body.servicos = params.servicos;
     if (params.assinatura !== undefined) body.assinatura = params.assinatura;

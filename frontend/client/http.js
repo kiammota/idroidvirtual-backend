@@ -48,6 +48,36 @@ export class HttpClient {
     }
   }
 
+  /**
+   * Decodifica o payload do JWT e retorna o usuario_id (ou sub / id)
+   * @returns {number|string|null}
+   */
+  getUsuarioId() {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const payloadBase64 = token.split('.')[1];
+      if (!payloadBase64) return null;
+
+      const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+
+      const payload = JSON.parse(jsonPayload);
+      
+      // Procura pelas chaves mais comuns de ID de usuário em tokens JWT
+      return payload.usuario_id || payload.usuarioId || payload.sub || payload.id || null;
+    } catch (e) {
+      console.error('Erro ao decodificar token JWT para obter usuario_id:', e);
+      return null;
+    }
+  }
+
   getHeaders() {
     const headers = {
       'Content-Type': 'application/json',

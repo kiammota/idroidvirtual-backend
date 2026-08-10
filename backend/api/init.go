@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -105,6 +106,8 @@ func (c Config) ExibirConfiguracao() {
 }
 
 func ConectarBanco(url string) *pgxpool.Pool {
+
+init:
 	logger.Log("Iniciando conexão com banco de dados")
 
 	bd, err := pgxpool.New(context.Background(), url)
@@ -118,7 +121,9 @@ func ConectarBanco(url string) *pgxpool.Pool {
 
 	if err := bd.Ping(context.Background()); err != nil {
 		logger.Err("Banco de dados não respondeu ao ping")
-		panic(err)
+		logger.Warn("Tentando de novo em 5 segundos...")
+		time.Sleep(5 * time.Second)
+		goto init
 	}
 
 	logger.OK("Banco de dados conectado com sucesso")
