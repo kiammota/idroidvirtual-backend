@@ -21,7 +21,7 @@ class ClientServiceClass extends HttpClient {
   }
 
   async getById(id) {
-    const response = await this.get(ENDPOINTS.CLIENTS.BY_ID);
+    const response = await this.get(ENDPOINTS.CLIENTS.BY_ID(id));
     if (response.success && response.data) {
       response.data = new Cliente(response.data);
     }
