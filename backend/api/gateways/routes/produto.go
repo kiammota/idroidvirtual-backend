@@ -19,6 +19,8 @@ func ProdutoRoutes(router *gin.RouterGroup, productController *controllers.Produ
 		// GET /products/category/:category - Lista produtos por categoria
 		productsGroup.GET("/category/:category", productController.GetByCategory)
 
+		productsGroup.POST("/:id/set/:num", productController.SetInventory)
+
 		// POST /products/:id - Atualiza um produto completo
 		productsGroup.POST("/:id", productController.Update)
 

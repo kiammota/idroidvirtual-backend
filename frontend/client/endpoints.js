@@ -42,6 +42,7 @@ export const ENDPOINTS = {
     BASE: "/products",
     BY_CATEGORY: (category) => `/products/category/${encodeURIComponent(category)}`,
     BY_ID: (id) => `/products/${id}`,
+    SET_STOCK: (id, num) => `/products/${id}/set/${num}`,
   },
 
   // Vendas

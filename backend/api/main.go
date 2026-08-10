@@ -83,7 +83,7 @@ func main() {
 
 	engine.Use(middlewares.CORSMiddleware())
 	engine.Use(middlewares.JsonOnlyMiddleware())
-	engine.Use(middlewares.JsonNotEmptyMiddleware())
+	// engine.Use(middlewares.JsonNotEmptyMiddleware()) -> kiam: ta me dando muito trabalho!
 	engine.Use(middlewares.LoggerBodyMiddleware())
 
 	logger.OK("Middlewares registrados")

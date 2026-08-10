@@ -46,6 +46,18 @@ class ProductServiceClass extends HttpClient {
   async deleteProduct(id) {
     return this.remove(id);
   }
+
+  /**
+   * Define o estoque absoluto do produto para o valor informado.
+   * Endpoint: /products/{id}/set/{num}
+   */
+  async setStock(id, num) {
+    const response = await this.post(ENDPOINTS.PRODUCTS.SET_STOCK(id, num));
+    if (response.success && response.data) {
+      response.data = new Produto(response.data);
+    }
+    return response;
+  }
 }
 
 /** Singleton */

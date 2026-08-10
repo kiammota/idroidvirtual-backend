@@ -95,6 +95,29 @@ func (c *ProductController) Update(ctx *gin.Context) {
 
 	gateways.Success(ctx, http.StatusOK, produto, "Produto atualizado com sucesso")
 }
+func (c *ProductController) SetInventory(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil || id <= 0 {
+		gateways.Error(ctx, http.StatusBadRequest, "ID requisitado é inválido!")
+		return
+	}
+
+	idQuant := ctx.Param("num")
+	quant, err := strconv.ParseInt(idQuant, 10, 64)
+	if err != nil || quant < 0 {
+		gateways.Error(ctx, http.StatusBadRequest, "Quantidade é inválida!")
+		return
+	}
+
+	err = c.repo.AlterarEstoque(ctx, id, int(quant))
+	if err != nil {
+		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	gateways.Success(ctx, 200, nil, "Estoque alterado com sucesso!")
+}
 
 // DELETE /products/:id
 func (c *ProductController) Delete(ctx *gin.Context) {

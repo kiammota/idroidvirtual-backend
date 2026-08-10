@@ -282,6 +282,30 @@ func (r *ProdutoRepository) AumentarEstoque(ctx context.Context, id int64, quant
 	return nil
 }
 
+func (r *ProdutoRepository) AlterarEstoque(
+	ctx context.Context,
+	id int64,
+	quantidade int,
+) error {
+	query := `
+		UPDATE produtos
+		SET estoque = estoque + $1,
+		    atualizado_em = NOW()
+		WHERE id = $2
+	`
+
+	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return errors.New("nenhum produto encontrado")
+	}
+
+	return nil
+}
+
 // AumentarEstoqueTx incrementa o estoque dentro de uma transação
 func (r *ProdutoRepository) AumentarEstoqueTx(ctx context.Context, tx pgx.Tx, id int64, quantidade int) error {
 	if quantidade <= 0 {
