@@ -9,29 +9,19 @@ import (
 	"backend/repositories"
 )
 
-// TrocaService define o contrato dos métodos do serviço de troca
-type TrocaService interface {
-	ProcessarTroca(ctx context.Context, troca *models.Troca) error
-	ObterPorVendaID(ctx context.Context, vendaID int64) (*models.Troca, error)
-	Listar(ctx context.Context, limit, offset int) ([]*models.Troca, error)
-	ListarUltimoMes(ctx context.Context, limit, offset int) ([]*models.Troca, error)
-	ListarUltimosTresMeses(ctx context.Context, limit, offset int) ([]*models.Troca, error)
-	ListarUltimosSeisMeses(ctx context.Context, limit, offset int) ([]*models.Troca, error)
-}
-
-type trocaService struct {
+type TrocaService struct {
 	trocaRepo repositories.TrocaRepository
 }
 
 func NewTrocaService(
 	trocaRepo repositories.TrocaRepository,
 ) TrocaService {
-	return &trocaService{
+	return TrocaService{
 		trocaRepo: trocaRepo,
 	}
 }
 
-func (s *trocaService) ProcessarTroca(
+func (s *TrocaService) ProcessarTroca(
 	ctx context.Context,
 	troca *models.Troca,
 ) error {
@@ -58,18 +48,18 @@ func (s *trocaService) ProcessarTroca(
 	return nil
 }
 
-func (s *trocaService) ObterPorVendaID(
+func (s *TrocaService) ObterPorID(
 	ctx context.Context,
-	vendaID int64,
+	id int64,
 ) (*models.Troca, error) {
 
-	if vendaID <= 0 {
-		return nil, errors.New("ID da venda inválido")
+	if id <= 0 {
+		return nil, errors.New("ID inválido")
 	}
 
-	troca, err := s.trocaRepo.BuscarPorVendaID(
+	troca, err := s.trocaRepo.BuscarPorID(
 		ctx,
-		vendaID,
+		id,
 	)
 
 	if err != nil {
@@ -82,7 +72,7 @@ func (s *trocaService) ObterPorVendaID(
 	return troca, nil
 }
 
-func (s *trocaService) Listar(
+func (s *TrocaService) Listar(
 	ctx context.Context,
 	limit, offset int,
 ) ([]*models.Troca, error) {
@@ -95,7 +85,7 @@ func (s *trocaService) Listar(
 	return trocas, nil
 }
 
-func (s *trocaService) ListarUltimoMes(
+func (s *TrocaService) ListarUltimoMes(
 	ctx context.Context,
 	limit, offset int,
 ) ([]*models.Troca, error) {
@@ -108,7 +98,7 @@ func (s *trocaService) ListarUltimoMes(
 	return trocas, nil
 }
 
-func (s *trocaService) ListarUltimosTresMeses(
+func (s *TrocaService) ListarUltimosTresMeses(
 	ctx context.Context,
 	limit, offset int,
 ) ([]*models.Troca, error) {
@@ -121,7 +111,7 @@ func (s *trocaService) ListarUltimosTresMeses(
 	return trocas, nil
 }
 
-func (s *trocaService) ListarUltimosSeisMeses(
+func (s *TrocaService) ListarUltimosSeisMeses(
 	ctx context.Context,
 	limit, offset int,
 ) ([]*models.Troca, error) {

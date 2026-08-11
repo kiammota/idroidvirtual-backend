@@ -25,6 +25,6 @@ func RegistrarRotasTroca(
 		trocas.GET("/seis-meses", trocaHandler.ListarUltimosSeisMeses)
 
 		// Buscar troca de uma venda específica
-		trocas.GET("/venda/:vendaId", trocaHandler.ObterPorVendaID)
+		trocas.GET("/venda/:id", trocaHandler.ObterPorID)
 	}
 }

@@ -9,7 +9,7 @@ window.NotificationService = NotificationService;
 
 /**
  * Página de Trocas (Trade-in)
- * Model Go: id, venda_id, modelo_aparelho, imei?, valor_avaliacao, condicao?, observacoes?, criado_em
+ * Troca ≠ Venda — usuário não informa venda_id.
  */
 async function init() {
   if (!requireAuth()) return;
@@ -35,22 +35,16 @@ async function init() {
   document.getElementById('form-troca').onsubmit = async (e) => {
     e.preventDefault();
 
-    const vendaId = Number(document.getElementById('troca-venda-id').value) || 0;
     const modelo = document.getElementById('troca-modelo').value.trim();
     const imeiRaw = document.getElementById('troca-imei').value.replace(/\D/g, '');
     const valorAvaliacao = parseFloat(document.getElementById('troca-avaliacao').value) || 0;
     const condicao = document.getElementById('troca-condicao').value.trim();
     const observacoes = document.getElementById('troca-observacoes').value.trim() || null;
 
-    if (!vendaId || vendaId <= 0) {
-      showToast('Informe o ID da venda', 'error');
-      return;
-    }
     if (!modelo) {
       showToast('Informe o modelo do aparelho', 'error');
       return;
     }
-    // IMEI opcional — se preenchido, valida tamanho
     if (imeiRaw && (imeiRaw.length < 14 || imeiRaw.length > 15)) {
       showToast('IMEI deve ter 14 ou 15 dígitos', 'error');
       return;
@@ -61,7 +55,6 @@ async function init() {
     }
 
     const troca = new Troca({
-      venda_id: vendaId,
       modelo_aparelho: modelo,
       imei: imeiRaw || '',
       valor_avaliacao: valorAvaliacao,
@@ -75,7 +68,7 @@ async function init() {
       return;
     }
 
-    const btn = e.target.querySelector('[type="submit"]') || document.querySelector('#form-troca button[type="submit"]');
+    const btn = document.querySelector('#form-troca button[type="submit"]');
     if (btn) {
       btn.disabled = true;
       btn.textContent = 'Salvando…';
@@ -86,10 +79,9 @@ async function init() {
       if (response.success) {
         showToast('Troca registrada com sucesso', 'success');
         document.getElementById('form-troca').reset();
-        // atualiza lista em background
         carregarTrocas();
       } else {
-        showToast(response.message || 'Erro ao registrar troca', 'error');
+        showToast(response.message || response.error || 'Erro ao registrar troca', 'error');
       }
     } catch (err) {
       showToast(err.message || 'Erro de conexão ao registrar troca', 'error');
@@ -107,19 +99,23 @@ async function init() {
       ? new Date(t.criado_em).toLocaleString('pt-BR')
       : '—';
 
+    const fields = [
+      { label: 'ID', value: `#${t.id}` },
+      { label: 'Modelo', value: t.modelo_aparelho || '—' },
+      { label: 'IMEI', value: t.imei || '—' },
+      { label: 'Avaliação', value: formatBRL(t.valor_avaliacao), highlight: true },
+      { label: 'Condição', value: t.condicao || '—' },
+      { label: 'Observações', value: t.observacoes || '—' },
+      { label: 'Registrada em', value: criado },
+    ];
+    if (t.venda_id > 0) {
+      fields.splice(1, 0, { label: 'Venda', value: `#${t.venda_id}` });
+    }
+
     openInspect({
       title: `Troca #${t.id}`,
       subtitle: 'Trade-in · IDroid Virtual',
-      fields: [
-        { label: 'ID', value: `#${t.id}` },
-        { label: 'Venda', value: t.venda_id ? `#${t.venda_id}` : '—' },
-        { label: 'Modelo', value: t.modelo_aparelho || '—' },
-        { label: 'IMEI', value: t.imei || '—' },
-        { label: 'Avaliação', value: formatBRL(t.valor_avaliacao), highlight: true },
-        { label: 'Condição', value: t.condicao || '—' },
-        { label: 'Observações', value: t.observacoes || '—' },
-        { label: 'Registrada em', value: criado },
-      ],
+      fields,
       footer: 'IDroid Virtual · Gestão',
     });
   }
@@ -139,7 +135,7 @@ async function init() {
       <div class="card list-item" data-id="${t.id}" style="cursor:pointer">
         <div class="info">
           <div class="title">${t.modelo_aparelho || 'Sem modelo'}</div>
-          <div class="sub">Venda #${t.venda_id || '—'}${imeiStr}${condStr}</div>
+          <div class="sub">${formatBRL(t.valor_avaliacao)}${imeiStr}${condStr}</div>
         </div>
         <div class="fw-bold text-primary">${formatBRL(t.valor_avaliacao)}</div>
       </div>`;
@@ -163,9 +159,14 @@ async function init() {
       const response = await TrocaService.listAll();
       if (response.success && Array.isArray(response.data)) {
         todasTrocas = response.data;
+      } else if (Array.isArray(response)) {
+        // backend às vezes devolve array puro
+        todasTrocas = response.map((d) => new Troca(d));
       } else {
         todasTrocas = [];
-        if (response.message) showToast(response.message, 'error');
+        if (response.message || response.error) {
+          showToast(response.message || response.error, 'error');
+        }
       }
     } catch (err) {
       todasTrocas = [];

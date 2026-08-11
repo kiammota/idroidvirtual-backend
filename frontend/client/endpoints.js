@@ -60,7 +60,7 @@ export const ENDPOINTS = {
     ULTIMO_MES: "/trocas/ultimo-mes",
     TRES_MESES: "/trocas/tres-meses",
     SEIS_MESES: "/trocas/seis-meses",
-    BY_VENDA_ID: (vendaId) => `/trocas/venda/${vendaId}`,
+    BY_ID: (id) => `/trocas/venda/${id}`,
   },
 
   // Financeiro

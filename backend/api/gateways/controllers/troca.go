@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -20,7 +21,7 @@ func NewTrocaController(service services.TrocaService) *TrocaController {
 	}
 }
 
-// POST /api/v1/trocas
+// POST /trocas
 func (h *TrocaController) Criar(c *gin.Context) {
 	var input models.Troca
 
@@ -41,20 +42,20 @@ func (h *TrocaController) Criar(c *gin.Context) {
 	c.JSON(http.StatusCreated, input)
 }
 
-// GET /api/v1/trocas/venda/:vendaId
-func (h *TrocaController) ObterPorVendaID(c *gin.Context) {
-	vendaID, err := strconv.ParseInt(c.Param("vendaId"), 10, 64)
+// GET /trocas/:id
+func (h *TrocaController) ObterPorID(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	if err != nil || vendaID <= 0 {
+	if err != nil || id <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "ID da venda inválido",
+			"error": "ID inválido",
 		})
 		return
 	}
 
-	troca, err := h.trocaService.ObterPorVendaID(
+	troca, err := h.trocaService.ObterPorID(
 		c.Request.Context(),
-		vendaID,
+		id,
 	)
 
 	if err != nil {
@@ -66,7 +67,7 @@ func (h *TrocaController) ObterPorVendaID(c *gin.Context) {
 
 	if troca == nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"message": "Nenhuma troca vinculada a esta venda",
+			"message": "Troca não encontrada",
 		})
 		return
 	}
@@ -74,50 +75,34 @@ func (h *TrocaController) ObterPorVendaID(c *gin.Context) {
 	c.JSON(http.StatusOK, troca)
 }
 
-// GET /api/v1/trocas?limit=10&offset=0
+// GET /trocas?limit=10&offset=0
 func (h *TrocaController) Listar(c *gin.Context) {
-	limit, offset := parsePaginacao(c)
-
-	trocas, err := h.trocaService.Listar(c.Request.Context(), limit, offset)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, trocas)
+	h.executarListagem(c, h.trocaService.Listar)
 }
 
-// GET /api/v1/trocas/ultimo-mes?limit=10&offset=0
+// GET /trocas/ultimo-mes?limit=10&offset=0
 func (h *TrocaController) ListarUltimoMes(c *gin.Context) {
-	limit, offset := parsePaginacao(c)
-
-	trocas, err := h.trocaService.ListarUltimoMes(c.Request.Context(), limit, offset)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, trocas)
+	h.executarListagem(c, h.trocaService.ListarUltimoMes)
 }
 
-// GET /api/v1/trocas/tres-meses?limit=10&offset=0
+// GET /trocas/tres-meses?limit=10&offset=0
 func (h *TrocaController) ListarUltimosTresMeses(c *gin.Context) {
-	limit, offset := parsePaginacao(c)
-
-	trocas, err := h.trocaService.ListarUltimosTresMeses(c.Request.Context(), limit, offset)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, trocas)
+	h.executarListagem(c, h.trocaService.ListarUltimosTresMeses)
 }
 
-// GET /api/v1/trocas/seis-meses?limit=10&offset=0
+// GET /trocas/seis-meses?limit=10&offset=0
 func (h *TrocaController) ListarUltimosSeisMeses(c *gin.Context) {
+	h.executarListagem(c, h.trocaService.ListarUltimosSeisMeses)
+}
+
+// Função auxiliar para evitar repetição de código nas chamadas de listagem
+func (h *TrocaController) executarListagem(
+	c *gin.Context,
+	fn func(ctx context.Context, limit, offset int) ([]*models.Troca, error),
+) {
 	limit, offset := parsePaginacao(c)
 
-	trocas, err := h.trocaService.ListarUltimosSeisMeses(c.Request.Context(), limit, offset)
+	trocas, err := fn(c.Request.Context(), limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
