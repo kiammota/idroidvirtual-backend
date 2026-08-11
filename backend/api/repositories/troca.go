@@ -29,7 +29,6 @@ func (r *TrocaRepository) Criar(
 
 	query := `
 		INSERT INTO trocas (
-			venda_id,
 			modelo_aparelho,
 			imei,
 			valor_avaliacao,
@@ -37,7 +36,7 @@ func (r *TrocaRepository) Criar(
 			observacoes
 		)
 		VALUES (
-			$1, $2, $3, $4, $5, $6
+			$1, $2, $3, $4, $5
 		)
 		RETURNING id, criado_em
 	`
@@ -49,7 +48,6 @@ func (r *TrocaRepository) Criar(
 	return r.Pool.QueryRow(
 		ctx,
 		query,
-		t.VendaID,
 		t.ModeloAparelho,
 		t.IMEI,
 		t.ValorAvaliacao,
@@ -61,16 +59,15 @@ func (r *TrocaRepository) Criar(
 	)
 }
 
-// BuscarPorVendaID retorna a troca vinculada a uma venda
-func (r *TrocaRepository) BuscarPorVendaID(
+// BuscarPorID retorna uma troca pelo seu ID
+func (r *TrocaRepository) BuscarPorID(
 	ctx context.Context,
-	vendaID int64,
+	id int64,
 ) (*models.Troca, error) {
 
 	query := `
 		SELECT
 			id,
-			venda_id,
 			modelo_aparelho,
 			imei,
 			valor_avaliacao,
@@ -78,7 +75,7 @@ func (r *TrocaRepository) BuscarPorVendaID(
 			observacoes,
 			criado_em
 		FROM trocas
-		WHERE venda_id = $1
+		WHERE id = $1
 	`
 
 	var t models.Troca
@@ -86,10 +83,9 @@ func (r *TrocaRepository) BuscarPorVendaID(
 	err := r.Pool.QueryRow(
 		ctx,
 		query,
-		vendaID,
+		id,
 	).Scan(
 		&t.ID,
-		&t.VendaID,
 		&t.ModeloAparelho,
 		&t.IMEI,
 		&t.ValorAvaliacao,
@@ -102,13 +98,13 @@ func (r *TrocaRepository) BuscarPorVendaID(
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
-
 		return nil, err
 	}
 
 	return &t, nil
 }
 
+// Listar retorna uma lista paginada de trocas
 func (r *TrocaRepository) Listar(
 	ctx context.Context,
 	limit, offset int,
@@ -117,7 +113,6 @@ func (r *TrocaRepository) Listar(
 	query := `
 		SELECT
 			id,
-			venda_id,
 			modelo_aparelho,
 			imei,
 			valor_avaliacao,
@@ -141,7 +136,6 @@ func (r *TrocaRepository) Listar(
 		var t models.Troca
 		err := rows.Scan(
 			&t.ID,
-			&t.VendaID,
 			&t.ModeloAparelho,
 			&t.IMEI,
 			&t.ValorAvaliacao,
@@ -170,7 +164,6 @@ func (r *TrocaRepository) ListarPorIntervaloMeses(
 	query := `
 		SELECT
 			id,
-			venda_id,
 			modelo_aparelho,
 			imei,
 			valor_avaliacao,
@@ -195,7 +188,6 @@ func (r *TrocaRepository) ListarPorIntervaloMeses(
 		var t models.Troca
 		err := rows.Scan(
 			&t.ID,
-			&t.VendaID,
 			&t.ModeloAparelho,
 			&t.IMEI,
 			&t.ValorAvaliacao,

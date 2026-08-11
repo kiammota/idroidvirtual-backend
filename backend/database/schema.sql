@@ -141,19 +141,12 @@ CREATE TABLE vendas (
 
 CREATE TABLE trocas (
     id BIGSERIAL PRIMARY KEY,
-    venda_id BIGINT NOT NULL UNIQUE,              -- Vincula 1:1 com a venda realizada
     modelo_aparelho VARCHAR(150) NOT NULL,        -- Ex: 'iPhone 12 Pro Max 128GB'
     imei VARCHAR(50) NOT NULL,                    -- IMEI do aparelho usado recebido
     valor_avaliacao NUMERIC(12,2) NOT NULL,       -- Valor abatido na venda (custo de entrada no estoque)
     condicao VARCHAR(50) DEFAULT 'USADO',         -- Ex: 'SEMINOVO', 'DEFEITO', 'EXCELENTE'
     observacoes TEXT,                             -- Avarias, marcas de uso, etc.
     criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
-
-    -- Restrição de Chave Estrangeira
-    CONSTRAINT fk_troca_venda 
-        FOREIGN KEY (venda_id) 
-        REFERENCES vendas(id) 
-        ON DELETE CASCADE
 );
 
 CREATE INDEX idx_vendas_produto_id

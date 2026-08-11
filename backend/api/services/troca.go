@@ -36,10 +36,6 @@ func (s *trocaService) ProcessarTroca(
 	troca *models.Troca,
 ) error {
 
-	if troca.VendaID <= 0 {
-		return errors.New("o ID da venda associada é obrigatório")
-	}
-
 	if troca.ModeloAparelho == "" {
 		return errors.New("o modelo do aparelho de troca é obrigatório")
 	}
