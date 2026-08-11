@@ -1,6 +1,17 @@
 /**
  * Modelo de Troca (Trade-in)
  * Espelha o struct Go: models.Troca
+ *
+ * type Troca struct {
+ *   ID             int64
+ *   VendaID        int64
+ *   ModeloAparelho string
+ *   IMEI           string   // opcional
+ *   ValorAvaliacao float64
+ *   Condicao       string   // omitempty
+ *   Observacoes    *string  // omitempty
+ *   CriadoEm       time.Time
+ * }
  */
 export class Troca {
   constructor(data = {}) {
@@ -15,7 +26,8 @@ export class Troca {
   }
 
   /**
-   * Valida os campos obrigatórios da troca
+   * Valida os campos obrigatórios da troca.
+   * IMEI é opcional; se informado, deve ter 14 ou 15 dígitos.
    * @returns {string[]}
    */
   validar() {
@@ -29,7 +41,7 @@ export class Troca {
       erros.push("O modelo do aparelho é obrigatório.");
     }
 
-    if (!this.imei || this.imei.length < 14 || this.imei.length > 15) {
+    if (this.imei && (this.imei.length < 14 || this.imei.length > 15)) {
       erros.push("O IMEI deve ter 14 ou 15 dígitos.");
     }
 
@@ -48,18 +60,21 @@ export class Troca {
   }
 
   /**
-   * Payload para POST /trocas
+   * Payload para POST /api/v1/trocas
    * @returns {Object}
    */
   toCreatePayload() {
     const payload = {
       venda_id: this.venda_id,
       modelo_aparelho: this.modelo_aparelho,
-      imei: this.imei,
       valor_avaliacao: this.valor_avaliacao,
     };
+    // IMEI só envia se preenchido
+    if (this.imei) payload.imei = this.imei;
     if (this.condicao) payload.condicao = this.condicao;
-    if (this.observacoes != null) payload.observacoes = this.observacoes;
+    if (this.observacoes != null && this.observacoes !== "") {
+      payload.observacoes = this.observacoes;
+    }
     return payload;
   }
 }

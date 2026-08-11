@@ -11,21 +11,20 @@ func RegistrarRotasTroca(
 	trocaHandler *controllers.TrocaController,
 ) {
 
-	v1 := router.Group("/api/v1")
+	trocas := router.Group("/trocas")
 	{
-		trocas := v1.Group("/trocas")
-		{
-			// Criar troca vinculada a uma venda
-			trocas.POST(
-				"",
-				trocaHandler.Criar,
-			)
+		// Criar troca vinculada a uma venda
+		trocas.POST("", trocaHandler.Criar)
 
-			// Buscar troca de uma venda específica
-			trocas.GET(
-				"/venda/:vendaId",
-				trocaHandler.ObterPorVendaID,
-			)
-		}
+		// Listar todas as trocas (paginado)
+		trocas.GET("", trocaHandler.Listar)
+
+		// Listar trocas por períodos (paginados)
+		trocas.GET("/ultimo-mes", trocaHandler.ListarUltimoMes)
+		trocas.GET("/tres-meses", trocaHandler.ListarUltimosTresMeses)
+		trocas.GET("/seis-meses", trocaHandler.ListarUltimosSeisMeses)
+
+		// Buscar troca de uma venda específica
+		trocas.GET("/venda/:vendaId", trocaHandler.ObterPorVendaID)
 	}
 }

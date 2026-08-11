@@ -15,51 +15,69 @@
   </header>
 
   <main class="app-main">
-    <form id="form-troca" class="animate-in">
-      <div class="form-group">
-        <label for="troca-modelo">Modelo do aparelho *</label>
-        <input type="text" id="troca-modelo" required placeholder="Ex: iPhone 12 128GB">
-      </div>
-      <div class="form-group">
-        <label for="troca-imei">IMEI *</label>
-        <input type="text" id="troca-imei" required placeholder="15 dígitos" maxlength="15" inputmode="numeric">
-      </div>
-      <div class="form-group">
-        <label for="troca-avaliacao">Valor de avaliação (R$) *</label>
-        <input type="number" id="troca-avaliacao" required step="0.01" min="0" placeholder="0,00" inputmode="decimal">
-      </div>
-      <div class="form-group">
-        <label for="troca-novo">Valor do aparelho novo (R$)</label>
-        <input type="number" id="troca-novo" step="0.01" min="0" placeholder="0,00" inputmode="decimal">
-      </div>
+    <div class="tabs" id="troca-tabs">
+      <button class="tab active" data-tab="nova">Nova Troca</button>
+      <button class="tab" data-tab="lista">Histórico</button>
+    </div>
 
-      <div class="toggle-row">
-        <span>Aplicar desconto padrão (10%)</span>
-        <div class="toggle on" id="toggle-desconto" role="switch" aria-checked="true"></div>
-      </div>
-      <div class="toggle-row">
-        <span>Simular juros maquininha</span>
-        <div class="toggle" id="toggle-juros" role="switch" aria-checked="false"></div>
-      </div>
-      <div class="form-group hidden" id="juros-group">
-        <label for="juros-pct">Taxa de juros (%)</label>
-        <input type="number" id="juros-pct" value="2.5" step="0.1" min="0" inputmode="decimal">
-      </div>
+    <!-- TAB: Nova Troca -->
+    <section id="tab-nova">
+      <form id="form-troca" class="animate-in">
+        <div class="form-group">
+          <label for="troca-venda-id">ID da Venda *</label>
+          <input type="number" id="troca-venda-id" required min="1" inputmode="numeric" placeholder="Ex: 42">
+        </div>
 
-      <div class="summary-box" id="resumo-troca">
-        <div class="summary-row"><span>Avaliação aparelho</span><span id="r-avaliacao">R$ 0,00</span></div>
-        <div class="summary-row"><span>Desconto 10%</span><span id="r-desconto">R$ 0,00</span></div>
-        <div class="summary-row"><span>Aparelho novo</span><span id="r-novo">R$ 0,00</span></div>
-        <div class="summary-row"><span>Juros</span><span id="r-juros">R$ 0,00</span></div>
-        <div class="summary-row total"><span>Diferença a pagar</span><span id="r-final">R$ 0,00</span></div>
-      </div>
+        <div class="form-group">
+          <label for="troca-modelo">Modelo do aparelho *</label>
+          <input type="text" id="troca-modelo" required placeholder="Ex: iPhone 12 128GB">
+        </div>
 
-      <p class="text-muted mt-1" style="font-size:0.8rem">Ao confirmar, o aparelho será preparado para entrada no estoque virtual.</p>
-      <button type="submit" class="btn btn-primary btn-block mt-2">Confirmar Troca</button>
-    </form>
+        <div class="form-group">
+          <label for="troca-imei">IMEI <span class="text-muted">(opcional)</span></label>
+          <input type="text" id="troca-imei" placeholder="14 ou 15 dígitos" maxlength="15" inputmode="numeric">
+        </div>
+
+        <div class="form-group">
+          <label for="troca-avaliacao">Valor de avaliação (R$) *</label>
+          <input type="number" id="troca-avaliacao" required step="0.01" min="0" placeholder="0,00" inputmode="decimal">
+        </div>
+
+        <div class="form-group">
+          <label for="troca-condicao">Condição</label>
+          <select id="troca-condicao">
+            <option value="">— Selecione —</option>
+            <option value="OTIMO">Ótimo</option>
+            <option value="BOM">Bom</option>
+            <option value="REGULAR">Regular</option>
+            <option value="RUIM">Ruim</option>
+            <option value="USADO">Usado</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="troca-observacoes">Observações</label>
+          <textarea id="troca-observacoes" rows="2" placeholder="Detalhes adicionais (opcional)"></textarea>
+        </div>
+
+        <p class="text-muted mt-1" style="font-size:0.8rem">
+          Ao confirmar, a troca será vinculada à venda informada.
+        </p>
+        <button type="submit" class="btn btn-primary btn-block mt-2">Registrar Troca</button>
+      </form>
+    </section>
+
+    <!-- TAB: Histórico -->
+    <section id="tab-lista" class="hidden">
+      <div id="troca-list">
+        <div class="empty-state">
+          <div class="icon">🔄</div>
+          <p>Nenhuma troca registrada ainda.</p>
+        </div>
+      </div>
+    </section>
   </main>
 
-  
   <script type="module" src="../../js/pages/trocas.js"></script>
 </body>
 </html>

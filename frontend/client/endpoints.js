@@ -56,8 +56,11 @@ export const ENDPOINTS = {
 
   // Trocas
   TROCAS: {
-    BASE: "/api/v1/trocas",
-    BY_VENDA_ID: (vendaId) => `/api/v1/trocas/venda/${vendaId}`,
+    BASE: "/trocas",
+    ULTIMO_MES: "/trocas/ultimo-mes",
+    TRES_MESES: "/trocas/tres-meses",
+    SEIS_MESES: "/trocas/seis-meses",
+    BY_VENDA_ID: (vendaId) => `/trocas/venda/${vendaId}`,
   },
 
   // Financeiro
