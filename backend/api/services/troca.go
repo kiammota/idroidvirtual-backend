@@ -30,10 +30,6 @@ func (s *TrocaService) ProcessarTroca(
 		return errors.New("o modelo do aparelho de troca é obrigatório")
 	}
 
-	if troca.IMEI == "" {
-		return errors.New("o IMEI do aparelho de troca é obrigatório")
-	}
-
 	if troca.ValorAvaliacao <= 0 {
 		return errors.New("o valor de avaliação da troca deve ser maior que zero")
 	}
