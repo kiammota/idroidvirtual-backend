@@ -35,6 +35,7 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 		os_summary AS (
 			SELECT 
 				COALESCE(SUM(valor), 0) AS total_servicos,
+				COALESCE(SUM(custo), 0) AS custo_servicos,
 				COUNT(*) AS qtd_os
 			FROM ordens_servico
 			WHERE status = 'FINALIZADA'
@@ -42,7 +43,7 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 		),
 		trocas_summary AS (
 			SELECT 
-				COALESCE(SUM(valor_avaliacao), 0) AS valor_estoque_perdido, -- Corrigido: valor_avaliacao
+				COALESCE(SUM(valor_avaliacao), 0) AS valor_estoque_perdido,
 				COUNT(*) AS qtd_perdas
 			FROM trocas
 			WHERE criado_em BETWEEN $1 AND $2
@@ -58,6 +59,7 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 			v.total_vendas,
 			v.qtd_vendas,
 			o.total_servicos,
+			o.custo_servicos,
 			o.qtd_os,
 			t.valor_estoque_perdido,
 			t.qtd_perdas,
@@ -72,6 +74,7 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 		totalVendas         float64
 		qtdVendas           int
 		totalServicos       float64
+		custoServicos       float64
 		qtdOS               int
 		valorEstoquePerdido float64
 		qtdPerdas           int
@@ -82,6 +85,7 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 		&totalVendas,
 		&qtdVendas,
 		&totalServicos,
+		&custoServicos,
 		&qtdOS,
 		&valorEstoquePerdido,
 		&qtdPerdas,
@@ -110,7 +114,8 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 		ticketMedioServico = totalServicos / float64(qtdOS)
 	}
 
-	lucroLiquido := faturamentoBruto - totalDespesas - valorEstoquePerdido
+	// Deduz o custo das OS no cálculo do lucro
+	lucroLiquido := faturamentoBruto - custoServicos - totalDespesas - valorEstoquePerdido
 
 	var margemLucro float64
 	if faturamentoBruto > 0 {
@@ -124,6 +129,7 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 		QuantidadeVendas:    qtdVendas,
 		TicketMedioVenda:    ticketMedioVenda,
 		TotalServicos:       totalServicos,
+		CustoServicos:       custoServicos, // Lembre-se de adicionar o campo CustoServicos no model ResumoFinanceiro se desejar exibi-lo
 		QuantidadeOS:        qtdOS,
 		TicketMedioServico:  ticketMedioServico,
 		FaturamentoBruto:    faturamentoBruto,

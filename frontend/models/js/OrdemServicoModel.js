@@ -9,6 +9,7 @@ export class OrdemServico {
         this.assinatura = data.assinatura ?? null;
         this.status = data.status ?? "";
         this.valor = data.valor != null ? Number(data.valor) : 0;
+        this.custo = data.custo != null ? Number(data.custo) : 0;
         this.criado_em = data.criado_em ?? null;
         this.atualizado_em = data.atualizado_em ?? null;
         // Campos auxiliares retornados pela API (join com cliente)
@@ -34,6 +35,10 @@ export class OrdemServico {
 
         if (this.valor < 0) {
             erros.push("O valor não pode ser negativo.");
+        }
+
+        if (this.custo < 0) {
+            erros.push("O custo não pode ser negativo.");
         }
 
         return erros;

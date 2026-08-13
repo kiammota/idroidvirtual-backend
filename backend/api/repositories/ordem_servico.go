@@ -27,51 +27,51 @@ func NewOrdemServicoRepository(pool *pgxpool.Pool) *OrdemServicoRepository {
 
 func (r *OrdemServicoRepository) Criar(ctx context.Context, os *models.OrdemServico) error {
 	query := `
-		INSERT INTO ordens_servico (usuario_id, cliente_id, nome_servico, defeito, servicos, valor, assinatura, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO ordens_servico (usuario_id, cliente_id, nome_servico, defeito, servicos, valor, custo, assinatura, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, numero_ordem, criado_em, atualizado_em
 	`
 	return r.Pool.QueryRow(
 		ctx, query,
-		os.UsuarioID, os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Assinatura, os.Status,
+		os.UsuarioID, os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Custo, os.Assinatura, os.Status,
 	).Scan(&os.ID, &os.NumeroOrdem, &os.CriadoEm, &os.AtualizadoEm)
 }
 
 func (r *OrdemServicoRepository) CriarTx(ctx context.Context, tx pgx.Tx, os *models.OrdemServico) error {
 	query := `
-		INSERT INTO ordens_servico (usuario_id, cliente_id, nome_servico, defeito, servicos, valor, assinatura, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO ordens_servico (usuario_id, cliente_id, nome_servico, defeito, servicos, valor, custo, assinatura, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, numero_ordem, criado_em, atualizado_em
 	`
 	return tx.QueryRow(
 		ctx, query,
-		os.UsuarioID, os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Assinatura, os.Status,
+		os.UsuarioID, os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Custo, os.Assinatura, os.Status,
 	).Scan(&os.ID, &os.NumeroOrdem, &os.CriadoEm, &os.AtualizadoEm)
 }
 
 func (r *OrdemServicoRepository) Atualizar(ctx context.Context, os *models.OrdemServico) error {
 	query := `
 		UPDATE ordens_servico
-		SET cliente_id = $1, nome_servico = $2, defeito = $3, servicos = $4, valor = $5, assinatura = $6, status = $7, atualizado_em = NOW()
-		WHERE id = $8
+		SET cliente_id = $1, nome_servico = $2, defeito = $3, servicos = $4, valor = $5, custo = $6, assinatura = $7, status = $8, atualizado_em = NOW()
+		WHERE id = $9
 		RETURNING atualizado_em
 	`
 	return r.Pool.QueryRow(
 		ctx, query,
-		os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Assinatura, os.Status, os.ID,
+		os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Custo, os.Assinatura, os.Status, os.ID,
 	).Scan(&os.AtualizadoEm)
 }
 
 func (r *OrdemServicoRepository) AtualizarTx(ctx context.Context, tx pgx.Tx, os *models.OrdemServico) error {
 	query := `
 		UPDATE ordens_servico
-		SET cliente_id = $1, nome_servico = $2, defeito = $3, servicos = $4, valor = $5, assinatura = $6, status = $7, atualizado_em = NOW()
-		WHERE id = $8
+		SET cliente_id = $1, nome_servico = $2, defeito = $3, servicos = $4, valor = $5, custo = $6, assinatura = $7, status = $8, atualizado_em = NOW()
+		WHERE id = $9
 		RETURNING atualizado_em
 	`
 	return tx.QueryRow(
 		ctx, query,
-		os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Assinatura, os.Status, os.ID,
+		os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Custo, os.Assinatura, os.Status, os.ID,
 	).Scan(&os.AtualizadoEm)
 }
 
@@ -113,6 +113,7 @@ func (r *OrdemServicoRepository) BuscarPorID(ctx context.Context, id int64) (*mo
 			os.defeito,
 			os.servicos,
 			os.valor,
+			os.custo,
 			os.assinatura,
 			os.status,
 			os.criado_em,
@@ -133,6 +134,7 @@ func (r *OrdemServicoRepository) BuscarPorID(ctx context.Context, id int64) (*mo
 		&os.Defeito,
 		&os.Servicos,
 		&os.Valor,
+		&os.Custo,
 		&os.Assinatura,
 		&os.Status,
 		&os.CriadoEm,
@@ -153,14 +155,14 @@ func (r *OrdemServicoRepository) BuscarPorID(ctx context.Context, id int64) (*mo
 
 func (r *OrdemServicoRepository) BuscarPorIDTx(ctx context.Context, tx pgx.Tx, id int64) (*models.OrdemServico, error) {
 	query := `
-		SELECT id, numero_ordem, cliente_id, nome_servico, defeito, servicos, valor, assinatura, status, criado_em, atualizado_em
+		SELECT id, numero_ordem, cliente_id, nome_servico, defeito, servicos, valor, custo, assinatura, status, criado_em, atualizado_em
 		FROM ordens_servico
 		WHERE id = $1
 		FOR UPDATE
 	`
 	var os models.OrdemServico
 	err := tx.QueryRow(ctx, query, id).Scan(
-		&os.ID, &os.NumeroOrdem, &os.ClienteID, &os.NomeServico, &os.Defeito, &os.Servicos, &os.Valor, &os.Assinatura, &os.Status, &os.CriadoEm, &os.AtualizadoEm,
+		&os.ID, &os.NumeroOrdem, &os.ClienteID, &os.NomeServico, &os.Defeito, &os.Servicos, &os.Valor, &os.Custo, &os.Assinatura, &os.Status, &os.CriadoEm, &os.AtualizadoEm,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -173,7 +175,7 @@ func (r *OrdemServicoRepository) BuscarPorIDTx(ctx context.Context, tx pgx.Tx, i
 
 func (r *OrdemServicoRepository) Listar(ctx context.Context, limit, offset int) ([]models.OrdemServico, error) {
 	query := `
-		SELECT id, numero_ordem, cliente_id, nome_servico, defeito, servicos, valor, assinatura, status, criado_em, atualizado_em
+		SELECT id, numero_ordem, cliente_id, nome_servico, defeito, servicos, valor, custo, assinatura, status, criado_em, atualizado_em
 		FROM ordens_servico
 		ORDER BY id DESC
 		LIMIT $1 OFFSET $2
@@ -189,7 +191,7 @@ func (r *OrdemServicoRepository) Listar(ctx context.Context, limit, offset int) 
 
 func (r *OrdemServicoRepository) BuscarPorClienteID(ctx context.Context, clienteID int64, limit, offset int) ([]models.OrdemServico, error) {
 	query := `
-		SELECT id, numero_ordem, cliente_id, nome_servico, defeito, servicos, valor, assinatura, status, criado_em, atualizado_em
+		SELECT id, numero_ordem, cliente_id, nome_servico, defeito, servicos, valor, custo, assinatura, status, criado_em, atualizado_em
 		FROM ordens_servico
 		WHERE cliente_id = $1
 		ORDER BY id DESC
@@ -206,7 +208,7 @@ func (r *OrdemServicoRepository) BuscarPorClienteID(ctx context.Context, cliente
 
 func (r *OrdemServicoRepository) BuscarPorNomeCliente(ctx context.Context, nome string, limit, offset int) ([]models.OrdemServico, error) {
 	query := `
-		SELECT os.id, os.numero_ordem, os.cliente_id, os.nome_servico, os.defeito, os.servicos, os.valor, os.assinatura, os.status, os.criado_em, os.atualizado_em
+		SELECT os.id, os.numero_ordem, os.cliente_id, os.nome_servico, os.defeito, os.servicos, os.valor, os.custo, os.assinatura, os.status, os.criado_em, os.atualizado_em
 		FROM ordens_servico os
 		JOIN clientes c ON os.cliente_id = c.id
 		WHERE c.nome ILIKE $1
@@ -224,7 +226,7 @@ func (r *OrdemServicoRepository) BuscarPorNomeCliente(ctx context.Context, nome 
 
 func (r *OrdemServicoRepository) BuscarPorEmailCliente(ctx context.Context, email string, limit, offset int) ([]models.OrdemServico, error) {
 	query := `
-		SELECT os.id, os.numero_ordem, os.cliente_id, os.nome_servico, os.defeito, os.servicos, os.valor, os.assinatura, os.status, os.criado_em, os.atualizado_em
+		SELECT os.id, os.numero_ordem, os.cliente_id, os.nome_servico, os.defeito, os.servicos, os.valor, os.custo, os.assinatura, os.status, os.criado_em, os.atualizado_em
 		FROM ordens_servico os
 		JOIN clientes c ON os.cliente_id = c.id
 		WHERE c.email ILIKE $1
@@ -242,7 +244,7 @@ func (r *OrdemServicoRepository) BuscarPorEmailCliente(ctx context.Context, emai
 
 func (r *OrdemServicoRepository) ListarPorStatus(ctx context.Context, status string, limit, offset int) ([]models.OrdemServico, error) {
 	query := `
-		SELECT id, numero_ordem, cliente_id, nome_servico, defeito, servicos, valor, assinatura, status, criado_em, atualizado_em
+		SELECT id, numero_ordem, cliente_id, nome_servico, defeito, servicos, valor, custo, assinatura, status, criado_em, atualizado_em
 		FROM ordens_servico
 		WHERE ($1 = '' OR status = $1)
 		ORDER BY id DESC
@@ -259,7 +261,7 @@ func (r *OrdemServicoRepository) ListarPorStatus(ctx context.Context, status str
 
 func (r *OrdemServicoRepository) BuscarPorNumeroCliente(ctx context.Context, numero string, limit, offset int) ([]models.OrdemServico, error) {
 	query := `
-		SELECT os.id, os.numero_ordem, os.cliente_id, os.nome_servico, os.defeito, os.servicos, os.valor, os.assinatura, os.status, os.criado_em, os.atualizado_em
+		SELECT os.id, os.numero_ordem, os.cliente_id, os.nome_servico, os.defeito, os.servicos, os.valor, os.custo, os.assinatura, os.status, os.criado_em, os.atualizado_em
 		FROM ordens_servico os
 		JOIN clientes c ON os.cliente_id = c.id
 		WHERE c.telefone ILIKE $1
@@ -277,7 +279,7 @@ func (r *OrdemServicoRepository) BuscarPorNumeroCliente(ctx context.Context, num
 
 func (r *OrdemServicoRepository) ListarPorPeriodo(ctx context.Context, dataInicio, dataFim time.Time) ([]models.OrdemServico, error) {
 	query := `
-		SELECT id, numero_ordem, cliente_id, nome_servico, defeito, servicos, valor, assinatura, status, criado_em, atualizado_em
+		SELECT id, numero_ordem, cliente_id, nome_servico, defeito, servicos, valor, custo, assinatura, status, criado_em, atualizado_em
 		FROM ordens_servico
 		WHERE criado_em >= $1 AND criado_em <= $2
 		ORDER BY criado_em DESC
@@ -329,6 +331,7 @@ func (r *OrdemServicoRepository) scanRows(rows pgx.Rows) ([]models.OrdemServico,
 			&os.Defeito,
 			&os.Servicos,
 			&os.Valor,
+			&os.Custo,
 			&os.Assinatura,
 			&os.Status,
 			&os.CriadoEm,

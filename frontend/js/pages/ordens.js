@@ -246,6 +246,11 @@ async function init() {
 
     document.getElementById('os-servico').value = servicosTexto;
     document.getElementById('os-valor').value = valor > 0 ? formatarMoeda(valor) : '';
+    const custo = dados.custo != null ? Number(dados.custo) : 0;
+    const elCusto = document.getElementById('os-custo');
+    if (elCusto) {
+      elCusto.value = custo > 0 ? formatarMoeda(custo) : '';
+    }
     document.getElementById('os-status').value = (dados.status || 'ABERTA').toUpperCase();
 
     limparAssinatura();
@@ -358,6 +363,7 @@ async function init() {
         { label: 'Defeito', value: os.defeito || '—' },
         { label: 'Serviços', value: os.servicos || '—' },
         { label: 'Valor', value: os.valor > 0 ? formatarMoeda(os.valor) : '—', highlight: true },
+        { label: 'Custo', value: os.custo > 0 ? formatarMoeda(os.custo) : '—' },
         { label: 'Aberta em', value: criado },
       ],
       footer: 'IDroid Virtual · Gestão',
@@ -412,6 +418,7 @@ async function init() {
         servicos: os.servicos,
         assinatura: os.assinatura || null,
         valor: os.valor,
+        custo: os.custo,
       });
 
       if (response && response.success) {
@@ -491,6 +498,8 @@ async function init() {
     const servicos = document.getElementById('os-servico').value.trim();
     const valorInputStr = document.getElementById('os-valor')?.value || '';
     const valor = parseMoedaParaNumero(valorInputStr);
+    const custoInputStr = document.getElementById('os-custo')?.value || '';
+    const custo = parseMoedaParaNumero(custoInputStr);
     const assinatura = document.getElementById('os-assinatura').value || null;
     const statusSelecionado = document.getElementById('os-status')?.value || 'ABERTA';
 
@@ -519,6 +528,7 @@ async function init() {
           assinatura,
           status: 'ABERTA',
           valor,
+          custo,
         };
 
         const response = await serviceOrderService.create(ordemPayload);
@@ -542,6 +552,7 @@ async function init() {
           assinatura,
           status: statusSelecionado,
           valor,
+          custo,
         };
 
         const response = await serviceOrderService.update(payload);
@@ -595,6 +606,7 @@ async function init() {
       .map((os) => {
         const num = os.numero_ordem || os.id;
         const valorStr = os.valor > 0 ? ` · ${formatarMoeda(os.valor)}` : '';
+        const custoStr = os.custo > 0 ? ` · Custo: ${formatarMoeda(os.custo)}` : '';
         const nomeServico = os.nome_servico || 'Serviço Sem Nome';
 
         return `
@@ -604,7 +616,7 @@ async function init() {
           <span class="badge ${badgeClass(os.status)}">${os.status || 'ABERTA'}</span>
         </div>
         <div class="title">${nomeServico}</div>
-        <div class="sub">${[os.defeito].filter(Boolean).join(' · ')}${valorStr}</div>
+        <div class="sub">${[os.defeito].filter(Boolean).join(' · ')}${valorStr}${custoStr}</div>
         ${os.servicos ? `<div class="sub">${os.servicos}</div>` : ''}
       </div>`;
       })

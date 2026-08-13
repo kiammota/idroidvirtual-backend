@@ -13,6 +13,7 @@ type OrdemServico struct {
 	Assinatura  *string   `json:"assinatura"` // base64 do canvas
 	Status      string    `json:"status"`
 	Valor       float64   `json:"valor"`
+	Custo       float64   `json:"custo"`
 	CriadoEm    time.Time `json:"criado_em"`
 	AtualizadoEm time.Time `json:"atualizado_em"`
 }

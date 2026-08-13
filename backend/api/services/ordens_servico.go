@@ -43,7 +43,6 @@ func (s *OrdensServicoService) ListarPorPeriodo(ctx context.Context, inicio, fim
 }
 
 // POST /service-orders
-// POST /service-orders
 func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemServico) (err error) {
 	if ordem == nil {
 		return errors.New("ordem de serviço inválida")
@@ -116,6 +115,7 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 	if err = s.AuditService.CadastrarOrdemDeServico(ctx, tx, ordem.UsuarioID, ordem.ID, cliente.Nome); err != nil {
 		return fmt.Errorf("erro ao registrar auditoria: %w", err)
 	}
+
 	// 7. Confirma transação
 	if err = tx.Commit(ctx); err != nil {
 		return fmt.Errorf("erro ao confirmar transação: %w", err)
@@ -207,24 +207,24 @@ func (s *OrdensServicoService) Atualizar(ctx context.Context, id int64, patch *m
 	atualizado := *existente
 
 	if patch.NumeroOrdem != 0 {
-		if *&patch.NumeroOrdem <= 0 {
+		if patch.NumeroOrdem <= 0 {
 			return errors.New("número de ordem inválido")
 		}
-		atualizado.NumeroOrdem = *&patch.NumeroOrdem
+		atualizado.NumeroOrdem = patch.NumeroOrdem
 	}
 
 	if patch.ClienteID != 0 {
-		if *&patch.ClienteID <= 0 {
+		if patch.ClienteID <= 0 {
 			return errors.New("cliente inválido")
 		}
-		cliente, err := s.ClienteRepo.BuscarPorIDTx(ctx, tx, *&patch.ClienteID)
+		cliente, err := s.ClienteRepo.BuscarPorIDTx(ctx, tx, patch.ClienteID)
 		if err != nil {
 			return err
 		}
 		if cliente == nil {
 			return errors.New("cliente não encontrado")
 		}
-		atualizado.ClienteID = *&patch.ClienteID
+		atualizado.ClienteID = patch.ClienteID
 	}
 
 	if patch.Defeito != nil {
@@ -235,12 +235,20 @@ func (s *OrdensServicoService) Atualizar(ctx context.Context, id int64, patch *m
 		atualizado.Servicos = patch.Servicos
 	}
 
+	if patch.Valor != 0 {
+		atualizado.Valor = patch.Valor
+	}
+
+	if patch.Custo != 0 {
+		atualizado.Custo = patch.Custo
+	}
+
 	if patch.Assinatura != nil {
 		atualizado.Assinatura = patch.Assinatura
 	}
 
 	if patch.Status != "" {
-		atualizado.Status = *&patch.Status
+		atualizado.Status = patch.Status
 	}
 
 	atualizado.ID = id

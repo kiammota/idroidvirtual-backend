@@ -176,6 +176,7 @@ CREATE TABLE ordens_servico (
     defeito TEXT,
     servicos TEXT,
     valor NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    custo NUMERIC(12,2) NOT NULL DEFAULT 0.00,
     assinatura TEXT,
     status VARCHAR(50) NOT NULL DEFAULT 'ABERTA',
     criado_em TIMESTAMP NOT NULL DEFAULT NOW(),

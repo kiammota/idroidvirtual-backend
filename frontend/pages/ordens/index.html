@@ -278,6 +278,11 @@
           <input type="text" id="os-valor" placeholder="R$ 0,00" inputmode="numeric">
         </div>
 
+        <div class="form-group">
+          <label for="os-custo">Custo (R$)</label>
+          <input type="text" id="os-custo" placeholder="R$ 0,00" inputmode="numeric">
+        </div>
+
         <div class="form-group" id="grupo-status" style="display:none">
           <label for="os-status">Status</label>
           <select id="os-status">
@@ -342,6 +347,21 @@
       // Máscara de Preço em Real (R$)
       if (inputValor) {
         inputValor.addEventListener('input', (e) => {
+          let value = e.target.value.replace(/\D/g, '');
+          if (!value) {
+            e.target.value = '';
+            return;
+          }
+          const options = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+          const result = (parseFloat(value) / 100).toLocaleString('pt-BR', options);
+          e.target.value = `R$ ${result}`;
+        });
+      }
+
+      // Máscara de Custo em Real (R$)
+      const inputCusto = document.getElementById('os-custo');
+      if (inputCusto) {
+        inputCusto.addEventListener('input', (e) => {
           let value = e.target.value.replace(/\D/g, '');
           if (!value) {
             e.target.value = '';

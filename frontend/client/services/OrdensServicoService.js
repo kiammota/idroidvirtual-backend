@@ -3,8 +3,8 @@ import { HttpClient } from "../http.js";
 import { OrdemServico } from "../models/OrdemServicoModel.js";
 
 class ServiceOrderServiceClass extends HttpClient {
+  
   async create(params) {
-    // Pega o usuario_id vindo do parâmetro ou direto do Token JWT
     const usuarioId = params.usuario_id || this.getUsuarioId();
 
     const body = {
@@ -17,9 +17,10 @@ class ServiceOrderServiceClass extends HttpClient {
     };
 
     if (params.empresa_id != null) body.empresa_id = Number(params.empresa_id);
-    if (params.telefone != null) body.telefone = params.telefone;
+    if (params.telefone != null) body.cliente_telefone = params.telefone;
     if (params.nome_servico != null) body.nome_servico = params.nome_servico;
     if (params.valor != null) body.valor = Number(params.valor);
+    if (params.custo != null) body.custo = Number(params.custo);
 
     const response = await this.post(ENDPOINTS.SERVICE_ORDERS.BASE, body);
     if (response.success && response.data) {
@@ -55,6 +56,7 @@ class ServiceOrderServiceClass extends HttpClient {
     if (params.assinatura !== undefined) body.assinatura = params.assinatura;
     if (params.status !== undefined) body.status = params.status;
     if (params.valor !== undefined) body.valor = Number(params.valor);
+    if (params.custo !== undefined) body.custo = Number(params.custo);
     if (params.nome_servico !== undefined) body.nome_servico = params.nome_servico;
     if (params.cliente_id !== undefined) body.cliente_id = params.cliente_id;
     if (params.telefone !== undefined) body.telefone = params.telefone;

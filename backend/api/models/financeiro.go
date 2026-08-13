@@ -20,6 +20,7 @@ type ResumoFinanceiro struct {
 	TotalServicos      float64 `json:"total_servicos"`
 	QuantidadeOS       int     `json:"quantidade_os"`
 	TicketMedioServico float64 `json:"ticket_medio_servico"`
+	CustoServicos      float64 `json:"custo_servicos"`
 
 	// Faturamento e Formas de Pagamento
 	FaturamentoBruto float64            `json:"faturamento_bruto"`
