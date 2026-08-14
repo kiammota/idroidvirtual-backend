@@ -74,5 +74,5 @@ func main() {
 	usuarioSend, err := json.Marshal(usuario)
 
 	result := SendPost(usuarioSend)
-	println("result: ", result)
+	fmt.Printf("RESULTADO: %s", result)
 }
