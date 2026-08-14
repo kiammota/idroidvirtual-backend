@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,8 +27,11 @@ func main() {
 	fmt.Println("CADASTRO DE USUÁRIO")
 	var usuario Usuario = Usuario{}
 
+	var empresaID string
+
 	form := huh.NewForm(
 		huh.NewGroup(
+			huh.NewInput().Title("Empresa ID: ").Value(&empresaID),
 			huh.NewInput().
 				Title("Nome: ").
 				Value(&usuario.Nome),
@@ -55,6 +59,13 @@ func main() {
 
 	usuario.Nome = strings.ToUpper(strings.TrimSpace(usuario.Nome))
 	usuario.Email = strings.TrimSpace(usuario.Email)
+
+	id, err := strconv.ParseInt(strings.TrimSpace(empresaID), 10, 64)
+	if err != nil {
+		println("erro cadastrando usuário: ", err.Error())
+		return
+	}
+	usuario.EmpresaID = id
 
 	usuarioEnviado, er := json.Marshal(usuario)
 	if er != nil {
