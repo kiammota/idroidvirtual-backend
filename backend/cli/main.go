@@ -76,6 +76,7 @@ func main() {
 		log.Fatalf("erro ao enviar requisição para o servidor: %v", err)
 	}
 	defer resp.Body.Close()
+	println("Body do servidor: ", resp.Body)
 	println("Requisição enviada! Status do servidor:", resp.Status)
 
 }
