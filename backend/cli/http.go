@@ -76,10 +76,10 @@ func SendGet(route string) Result {
 	return result
 }
 
-func SendPost(body []byte) Result {
+func SendPost(route string, body []byte) Result {
 	req, err := http.NewRequest(
 		http.MethodPost,
-		API_URL,
+		API_URL+route,
 		bytes.NewReader(body),
 	)
 	if err != nil {

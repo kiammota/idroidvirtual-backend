@@ -73,6 +73,6 @@ func main() {
 	usuario.EmpresaID = id
 	usuarioSend, err := json.Marshal(usuario)
 
-	result := SendPost(usuarioSend)
+	result := SendPost("users", usuarioSend)
 	fmt.Printf("RESULTADO: %s", result)
 }
