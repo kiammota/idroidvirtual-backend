@@ -68,7 +68,10 @@ func SendGet(route string) Result {
 	}
 
 	var result Result
-	result = deserializeResult(body)
+	result, err = deserializeResult(body)
+	if err !=nil {
+		println("erro tentando deserializar result: ", err.Error())
+	}
 
 	return result
 }
@@ -109,7 +112,10 @@ func SendPost(body []byte) Result {
 
 	var result Result
 
-	result = deserializeResult(responseBody)	
+	result, err = deserializeResult(responseBody)	
+	if err != nil {
+		println("erro tentando deserializar result:", err.Error())
+	}
 
 	return result
 }
