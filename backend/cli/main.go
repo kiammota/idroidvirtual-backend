@@ -69,6 +69,7 @@ func main() {
 		println("erro a fazer requisição:", err.Error())
 		return
 	}
+	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
