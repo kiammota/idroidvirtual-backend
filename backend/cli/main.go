@@ -44,8 +44,7 @@ func main() {
 
 			huh.NewInput().
 				Title("Senha: ").
-				Password(true).
-				Value(&usuario.Senha),
+				Value(&usuario.Senha).EchoMode(huh.EchoModePassword),
 		),
 	)
 
@@ -64,7 +63,7 @@ func main() {
 	}
 	println("usuário cadastrado!")
 
-	req, err := http.NewRequest("POST", "http://localhost:8080/users/", bytes.NewBuffer(usuarioEnviado))
+	req, err := http.NewRequest("POST", "http://localhost:8080/users", bytes.NewBuffer(usuarioEnviado))
 	if err != nil {
 		println("erro a fazer requisição:", err.Error())
 		return
