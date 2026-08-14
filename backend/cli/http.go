@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -17,18 +18,19 @@ const (
 	API_URL = "http://localhost:8080/"
 )
 
-/* static */ func deserializeResult(body []byte) Result {
+func deserializeResult(body []byte) (Result, error) {
 	var result Result
 
-	err := json.Unmarshal(body, &result)
-	if err != nil {
-		return Result{
-			Success: false,
-			Message: "(DESSERIALIZAÇÃO INVÁLIDA) resposta inválida da API: " + err.Error(),
-		}
+	fmt.Printf("BODY RECEBIDO: %q\n", string(body))
+
+	if err := json.Unmarshal(body, &result); err != nil {
+		return Result{}, fmt.Errorf(
+			"DESSERIALIZAÇÃO INVÁLIDA: %w",
+			err,
+		)
 	}
 
-	return result
+	return result, nil
 }
 
 
