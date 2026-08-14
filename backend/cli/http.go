@@ -18,6 +18,21 @@ const (
 	API_URL = "http://localhost:8080/"
 )
 
+/* static */ func deserializeResult(body []byte) Result {
+	var result Result
+
+	err := json.Unmarshal(body, &result)
+	if err != nil {
+		return Result{
+			Success: false,
+			Message: "(DESSERIALIZAÇÃO INVÁLIDA) resposta inválida da API: " + err.Error(),
+		}
+	}
+
+	return result
+}
+
+
 func SendGet(route string) Result {
 	req, err := http.NewRequest(
 		http.MethodGet,
@@ -52,13 +67,7 @@ func SendGet(route string) Result {
 	}
 
 	var result Result
-
-	if err := json.Unmarshal(body, &result); err != nil {
-		return Result{
-			Success: false,
-			Message: fmt.Sprintf("resposta inválida da API: %s", err),
-		}
-	}
+	result = deserializeResult(body)
 
 	return result
 }
@@ -99,15 +108,7 @@ func SendPost(body []byte) Result {
 
 	var result Result
 
-	if err := json.Unmarshal(responseBody, &result); err != nil {
-		return Result{
-			Success: false,
-			Message: fmt.Sprintf(
-				"resposta inválida da API: %s",
-				err,
-			),
-		}
-	}
+	result = deserializeResult(responseBody)	
 
 	return result
 }
