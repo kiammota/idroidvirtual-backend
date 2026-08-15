@@ -35,7 +35,7 @@ func main() {
 	usuarioRepo := repositories.NewUsuarioRepository(bd)
 	vendaRepo := repositories.NewVendaRepository(bd)
 	produtoRepo := repositories.NewProdutoRepository(bd)
-	ordemServicoRepo := repositories.NewOrdemServicoRepository(bd)
+	ordemServicoRepo := repositories.NewOrdemServicoRepository(bd, empresaRepo)
 	clienteRepo := repositories.NewClienteRepository(bd)
 	trocaRepo := repositories.NewTrocaRepository(bd)
 	financeiroRepo := repositories.NewFinanceiroRepository(bd)

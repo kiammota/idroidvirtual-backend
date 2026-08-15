@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"backend/models"
@@ -12,12 +13,14 @@ import (
 )
 
 type OrdemServicoRepository struct {
-	Pool *pgxpool.Pool
+	Pool        *pgxpool.Pool
+	EmpresaRepo *EmpresaRepository
 }
 
-func NewOrdemServicoRepository(pool *pgxpool.Pool) *OrdemServicoRepository {
+func NewOrdemServicoRepository(pool *pgxpool.Pool, empresa *EmpresaRepository) *OrdemServicoRepository {
 	return &OrdemServicoRepository{
-		Pool: pool,
+		Pool:        pool,
+		EmpresaRepo: empresa,
 	}
 }
 
@@ -25,28 +28,99 @@ func NewOrdemServicoRepository(pool *pgxpool.Pool) *OrdemServicoRepository {
 // MÉTODOS DE ESCRITA / MUTACIONAL
 // ============================================================================
 
-func (r *OrdemServicoRepository) Criar(ctx context.Context, os *models.OrdemServico) error {
+func (r *OrdemServicoRepository) Criar(
+	ctx context.Context,
+	os *models.OrdemServico,
+) error {
+	empresa, err := r.EmpresaRepo.BuscarPorUsuarioID(ctx, os.UsuarioID)
+	if err != nil {
+		return fmt.Errorf("erro ao buscar empresa do usuário: %w", err)
+	}
+
 	query := `
-		INSERT INTO ordens_servico (usuario_id, cliente_id, nome_servico, defeito, servicos, valor, custo, assinatura, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO ordens_servico (
+			empresa_id,
+			usuario_id,
+			cliente_id,
+			nome_servico,
+			defeito,
+			servicos,
+			valor,
+			custo,
+			assinatura,
+			status
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id, numero_ordem, criado_em, atualizado_em
 	`
+
 	return r.Pool.QueryRow(
-		ctx, query,
-		os.UsuarioID, os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Custo, os.Assinatura, os.Status,
-	).Scan(&os.ID, &os.NumeroOrdem, &os.CriadoEm, &os.AtualizadoEm)
+		ctx,
+		query,
+		empresa.ID,
+		os.UsuarioID,
+		os.ClienteID,
+		os.NomeServico,
+		os.Defeito,
+		os.Servicos,
+		os.Valor,
+		os.Custo,
+		os.Assinatura,
+		os.Status,
+	).Scan(
+		&os.ID,
+		&os.NumeroOrdem,
+		&os.CriadoEm,
+		&os.AtualizadoEm,
+	)
 }
 
-func (r *OrdemServicoRepository) CriarTx(ctx context.Context, tx pgx.Tx, os *models.OrdemServico) error {
+func (r *OrdemServicoRepository) CriarTx(
+	ctx context.Context,
+	tx pgx.Tx,
+	os *models.OrdemServico,
+) error {
+	empresa, err := r.EmpresaRepo.BuscarPorUsuarioID(ctx, os.UsuarioID)
+	if err != nil {
+		return fmt.Errorf("erro ao buscar empresa do usuário: %w", err)
+	}
+
 	query := `
-		INSERT INTO ordens_servico (usuario_id, cliente_id, nome_servico, defeito, servicos, valor, custo, assinatura, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO ordens_servico (
+			empresa_id,
+			usuario_id,
+			cliente_id,
+			nome_servico,
+			defeito,
+			servicos,
+			valor,
+			custo,
+			assinatura,
+			status
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id, numero_ordem, criado_em, atualizado_em
 	`
+
 	return tx.QueryRow(
-		ctx, query,
-		os.UsuarioID, os.ClienteID, os.NomeServico, os.Defeito, os.Servicos, os.Valor, os.Custo, os.Assinatura, os.Status,
-	).Scan(&os.ID, &os.NumeroOrdem, &os.CriadoEm, &os.AtualizadoEm)
+		ctx,
+		query,
+		empresa.ID,
+		os.UsuarioID,
+		os.ClienteID,
+		os.NomeServico,
+		os.Defeito,
+		os.Servicos,
+		os.Valor,
+		os.Custo,
+		os.Assinatura,
+		os.Status,
+	).Scan(
+		&os.ID,
+		&os.NumeroOrdem,
+		&os.CriadoEm,
+		&os.AtualizadoEm,
+	)
 }
 
 func (r *OrdemServicoRepository) Atualizar(ctx context.Context, os *models.OrdemServico) error {

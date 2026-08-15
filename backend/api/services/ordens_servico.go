@@ -61,8 +61,8 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 	var telefoneBruto string
 	if ordem.ClienteTelefone != "" {
 		telefoneBruto = ordem.ClienteTelefone
-	} else if ordem.Cliente != nil && ordem.Cliente.Telefone != nil {
-		telefoneBruto = *ordem.Cliente.Telefone
+	} else if ordem.ClienteID != 0 && ordem.ClienteTelefone != "" {
+		telefoneBruto = *&ordem.ClienteTelefone
 	}
 
 	telefoneLimpo := apenasNumeros(telefoneBruto)
@@ -92,8 +92,8 @@ func (s *OrdensServicoService) Criar(ctx context.Context, ordem *models.OrdemSer
 		enderecoPadrao := "NÃO INFORMADO"
 		novoCliente := &models.Cliente{
 			Nome:     "NÃO INFORMADO",
-			Telefone: &telefoneLimpo,
-			Endereco: &enderecoPadrao,
+			Telefone: telefoneLimpo,
+			Endereco: enderecoPadrao,
 		}
 
 		if err = s.ClienteRepo.CriarTx(ctx, tx, novoCliente); err != nil {
@@ -227,11 +227,11 @@ func (s *OrdensServicoService) Atualizar(ctx context.Context, id int64, patch *m
 		atualizado.ClienteID = patch.ClienteID
 	}
 
-	if patch.Defeito != nil {
+	if patch.Defeito != "" {
 		atualizado.Defeito = patch.Defeito
 	}
 
-	if patch.Servicos != nil {
+	if patch.Servicos != "" {
 		atualizado.Servicos = patch.Servicos
 	}
 
@@ -243,7 +243,7 @@ func (s *OrdensServicoService) Atualizar(ctx context.Context, id int64, patch *m
 		atualizado.Custo = patch.Custo
 	}
 
-	if patch.Assinatura != nil {
+	if patch.Assinatura != "" {
 		atualizado.Assinatura = patch.Assinatura
 	}
 

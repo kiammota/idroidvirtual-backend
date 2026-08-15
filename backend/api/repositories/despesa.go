@@ -25,16 +25,16 @@ func NewDespesaRepository(pool *pgxpool.Pool) *DespesaRepository {
 func (r *DespesaRepository) Criar(ctx context.Context, d *models.Despesa) error {
 	query := `
 		INSERT INTO despesas (
-			empresa_id, descricao, categoria, valor, valor_pago,
+			empresa_id, usuario_id, descricao, categoria, valor, valor_pago,
 			forma_pagamento, status, data_vencimento, data_pagamento,
 			comprovante_url, numero_documento
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING id, criado_em;
 	`
 
 	err := r.pool.QueryRow(
 		ctx, query,
-		d.EmpresaID, d.Descricao, d.Categoria, d.Valor, d.ValorPago,
+		d.EmpresaID, d.UsuarioID, d.Descricao, d.Categoria, d.Valor, d.ValorPago,
 		d.FormaPagamento, d.Status, d.DataVencimento, d.DataPagamento,
 		d.ComprovanteURL, d.NumeroDocumento,
 	).Scan(&d.ID, &d.CriadoEm)
@@ -50,7 +50,7 @@ func (r *DespesaRepository) Criar(ctx context.Context, d *models.Despesa) error 
 func (r *DespesaRepository) BuscarPorID(ctx context.Context, id, empresaID int64) (*models.Despesa, error) {
 	query := `
 		SELECT 
-			id, empresa_id, descricao, categoria, valor, valor_pago,
+			id, empresa_id, usuario_id, descricao, categoria, valor, valor_pago,
 			forma_pagamento, status, data_vencimento, data_pagamento,
 			comprovante_url, numero_documento, criado_em
 		FROM despesas
@@ -59,7 +59,7 @@ func (r *DespesaRepository) BuscarPorID(ctx context.Context, id, empresaID int64
 
 	var d models.Despesa
 	err := r.pool.QueryRow(ctx, query, id, empresaID).Scan(
-		&d.ID, &d.EmpresaID, &d.Descricao, &d.Categoria, &d.Valor, &d.ValorPago,
+		&d.ID, &d.EmpresaID, &d.UsuarioID, &d.Descricao, &d.Categoria, &d.Valor, &d.ValorPago,
 		&d.FormaPagamento, &d.Status, &d.DataVencimento, &d.DataPagamento,
 		&d.ComprovanteURL, &d.NumeroDocumento, &d.CriadoEm,
 	)
@@ -74,11 +74,11 @@ func (r *DespesaRepository) BuscarPorID(ctx context.Context, id, empresaID int64
 	return &d, nil
 }
 
-// ListarPorEmpresaEPeriodo busca despesas dentro de um intervalo de datas por vencimento ou pagamento
+// ListarPorEmpresaEPeriodo busca despesas dentro de um intervalo de datas por vencimento
 func (r *DespesaRepository) ListarPorEmpresaEPeriodo(ctx context.Context, empresaID int64, inicio, fim time.Time) ([]models.Despesa, error) {
 	query := `
 		SELECT 
-			id, empresa_id, descricao, categoria, valor, valor_pago,
+			id, empresa_id, usuario_id, descricao, categoria, valor, valor_pago,
 			forma_pagamento, status, data_vencimento, data_pagamento,
 			comprovante_url, numero_documento, criado_em
 		FROM despesas
@@ -97,7 +97,7 @@ func (r *DespesaRepository) ListarPorEmpresaEPeriodo(ctx context.Context, empres
 	for rows.Next() {
 		var d models.Despesa
 		err := rows.Scan(
-			&d.ID, &d.EmpresaID, &d.Descricao, &d.Categoria, &d.Valor, &d.ValorPago,
+			&d.ID, &d.EmpresaID, &d.UsuarioID, &d.Descricao, &d.Categoria, &d.Valor, &d.ValorPago,
 			&d.FormaPagamento, &d.Status, &d.DataVencimento, &d.DataPagamento,
 			&d.ComprovanteURL, &d.NumeroDocumento, &d.CriadoEm,
 		)
@@ -119,22 +119,23 @@ func (r *DespesaRepository) Atualizar(ctx context.Context, d *models.Despesa) er
 	query := `
 		UPDATE despesas
 		SET 
-			descricao = $1,
-			categoria = $2,
-			valor = $3,
-			valor_pago = $4,
-			forma_pagamento = $5,
-			status = $6,
-			data_vencimento = $7,
-			data_pagamento = $8,
-			comprovante_url = $9,
-			numero_documento = $10
-		WHERE id = $11 AND empresa_id = $12;
+			usuario_id = $1,
+			descricao = $2,
+			categoria = $3,
+			valor = $4,
+			valor_pago = $5,
+			forma_pagamento = $6,
+			status = $7,
+			data_vencimento = $8,
+			data_pagamento = $9,
+			comprovante_url = $10,
+			numero_documento = $11
+		WHERE id = $12 AND empresa_id = $13;
 	`
 
 	cmd, err := r.pool.Exec(
 		ctx, query,
-		d.Descricao, d.Categoria, d.Valor, d.ValorPago,
+		d.UsuarioID, d.Descricao, d.Categoria, d.Valor, d.ValorPago,
 		d.FormaPagamento, d.Status, d.DataVencimento, d.DataPagamento,
 		d.ComprovanteURL, d.NumeroDocumento, d.ID, d.EmpresaID,
 	)

@@ -6,10 +6,12 @@ import (
 
 type Cliente struct {
 	ID           int64     `json:"id"`
+	EmpresaID    int64     `json:"empresa_id"`
 	Nome         string    `json:"nome"`
-	Telefone     *string   `json:"telefone,omitempty"`
-	Endereco     *string   `json:"endereco,omitempty"`
-	Email        *string   `json:"email,omitempty"`
+	CPFCNPJ      string    `json:"cpf_cnpj"`
+	Telefone     string    `json:"telefone"`
+	Email        string    `json:"email"`
+	Endereco     string    `json:"endereco"`
 	CriadoEm     time.Time `json:"criado_em"`
 	AtualizadoEm time.Time `json:"atualizado_em"`
 }

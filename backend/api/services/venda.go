@@ -134,7 +134,7 @@ func (s *VendaService) ExecutarVenda(
 	venda := &models.Venda{
 		ProdutoID:     produtoID,
 		UsuarioID:     usuarioID,
-		ClienteID:     clienteID, // 0 = Consumidor Final
+		ClienteID:     &clienteID, // 0 = Consumidor Final
 		Quantidade:    quantidade,
 		Total:         valorTotal,
 		TipoPagamento: tipoPagamento,
