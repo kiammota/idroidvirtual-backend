@@ -1,15 +1,11 @@
 -- =====================================================================
 -- SCHEMA COMPLETO - FINANCEIRO ROBUSTO
 -- =====================================================================
--- Objetivo: Schema otimizado para cálculos financeiros precisos
--- Autor: Análise Técnica
--- Data: 2026
--- =====================================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- =========================
--- TABELAS DE USUÁRIOS E EMPRESA
+-- EMPRESAS E USUÁRIOS
 -- =========================
 
 CREATE TABLE IF NOT EXISTS empresas (
@@ -60,7 +56,7 @@ CREATE INDEX IF NOT EXISTS idx_auditoria_empresa ON auditorias (empresa_id);
 CREATE INDEX IF NOT EXISTS idx_auditoria_horario ON auditorias (horario);
 
 -- =========================
--- TABELAS DE PRODUTOS E CLIENTES
+-- PRODUTOS E CLIENTES
 -- =========================
 
 CREATE TABLE IF NOT EXISTS produtos (
@@ -83,6 +79,7 @@ CREATE INDEX IF NOT EXISTS idx_produtos_empresa ON produtos (empresa_id);
 CREATE INDEX IF NOT EXISTS idx_produtos_nome ON produtos (nome);
 CREATE INDEX IF NOT EXISTS idx_produtos_estoque ON produtos (estoque);
 
+-- Cliente NÃO tem empresa_id (cadastro global / compartilhado)
 CREATE TABLE IF NOT EXISTS clientes (
     id BIGSERIAL PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
@@ -91,17 +88,15 @@ CREATE TABLE IF NOT EXISTS clientes (
     email VARCHAR(255),
     endereco TEXT,
     criado_em TIMESTAMP NOT NULL DEFAULT NOW(),
-    atualizado_em TIMESTAMP NOT NULL DEFAULT NOW(),
-    CONSTRAINT uq_cliente_email_empresa UNIQUE (empresa_id, email),
-    CONSTRAINT uq_cliente_telefone_empresa UNIQUE (empresa_id, telefone)
+    atualizado_em TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_clientes_empresa ON clientes (empresa_id);
 CREATE INDEX IF NOT EXISTS idx_clientes_nome ON clientes (nome);
 CREATE INDEX IF NOT EXISTS idx_clientes_email ON clientes (email);
+CREATE INDEX IF NOT EXISTS idx_clientes_telefone ON clientes (telefone);
 
 -- =========================
--- TABELAS DE VENDAS E TROCAS
+-- VENDAS E TROCAS
 -- =========================
 
 CREATE TABLE IF NOT EXISTS vendas (
@@ -179,7 +174,7 @@ CREATE INDEX IF NOT EXISTS idx_trocas_criado_em ON trocas (criado_em);
 CREATE INDEX IF NOT EXISTS idx_trocas_status ON trocas (status);
 
 -- =========================
--- TABELA DE ORDENS DE SERVIÇO
+-- ORDENS DE SERVIÇO
 -- =========================
 
 CREATE SEQUENCE IF NOT EXISTS ordens_servico_numero_ordem_seq;
@@ -234,7 +229,7 @@ CREATE INDEX IF NOT EXISTS idx_os_criado_em ON ordens_servico (criado_em);
 CREATE INDEX IF NOT EXISTS idx_os_data_conclusao ON ordens_servico (data_conclusao);
 
 -- =========================
--- TABELA DE DESPESAS
+-- DESPESAS
 -- =========================
 
 CREATE TABLE IF NOT EXISTS despesas (
@@ -272,7 +267,7 @@ CREATE INDEX IF NOT EXISTS idx_despesas_data_vencimento ON despesas (data_vencim
 CREATE INDEX IF NOT EXISTS idx_despesas_data_pagamento ON despesas (data_pagamento);
 
 -- =========================
--- TABELA DE ASSINATURA
+-- ASSINATURAS
 -- =========================
 
 CREATE TABLE IF NOT EXISTS assinaturas (
@@ -295,7 +290,7 @@ CREATE INDEX IF NOT EXISTS idx_assinaturas_empresa ON assinaturas (empresa_id);
 CREATE INDEX IF NOT EXISTS idx_assinaturas_status ON assinaturas (status);
 
 -- =========================
--- TABELA DE MOVIMENTAÇÃO DE ESTOQUE
+-- MOVIMENTAÇÃO DE ESTOQUE
 -- =========================
 
 CREATE TABLE IF NOT EXISTS movimentacoes_estoque (
@@ -327,20 +322,3 @@ CREATE INDEX IF NOT EXISTS idx_movimentacao_empresa ON movimentacoes_estoque (em
 CREATE INDEX IF NOT EXISTS idx_movimentacao_produto ON movimentacoes_estoque (produto_id);
 CREATE INDEX IF NOT EXISTS idx_movimentacao_tipo ON movimentacoes_estoque (tipo);
 CREATE INDEX IF NOT EXISTS idx_movimentacao_criado_em ON movimentacoes_estoque (criado_em);
-
--- =====================================================================
--- MIGRATIONS NECESSÁRIAS (se já existe schema antigo)
--- =====================================================================
--- Execute estes comandos se você está atualizando de um schema antigo:
---
--- ALTER TABLE ordens_servico ADD COLUMN IF NOT EXISTS data_conclusao TIMESTAMP;
--- ALTER TABLE ordens_servico ADD COLUMN IF NOT EXISTS empresa_id BIGINT;
--- ALTER TABLE trocas ADD COLUMN IF NOT EXISTS empresa_id BIGINT;
--- ALTER TABLE trocas ADD COLUMN IF NOT EXISTS usuario_id BIGINT;
--- ALTER TABLE trocas ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'RECEBIDA';
--- ALTER TABLE vendas ADD COLUMN IF NOT EXISTS valor_troca_cedida NUMERIC(12,2) DEFAULT 0.00;
--- ALTER TABLE vendas ADD COLUMN IF NOT EXISTS empresa_id BIGINT;
--- ALTER TABLE produtos ADD COLUMN IF NOT EXISTS empresa_id BIGINT;
--- ALTER TABLE clientes ADD COLUMN IF NOT EXISTS empresa_id BIGINT;
--- ALTER TABLE despesas ADD COLUMN IF NOT EXISTS usuario_id BIGINT;
--- ALTER TABLE movimentacoes_estoque ADD COLUMN IF NOT EXISTS empresa_id BIGINT;
