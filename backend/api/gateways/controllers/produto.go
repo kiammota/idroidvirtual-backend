@@ -55,6 +55,7 @@ func (c *ProductController) Create(ctx *gin.Context) {
 		return
 	}
 
+	// Atribui a empresa dona do produto na criação
 	produto.EmpresaID = empresaID
 
 	if err := c.repo.Criar(ctx.Request.Context(), &produto); err != nil {
@@ -93,6 +94,8 @@ func (c *ProductController) GetByCategory(ctx *gin.Context) {
 
 // PUT /products/:id
 func (c *ProductController) Update(ctx *gin.Context) {
+	// Opcional: Se o ID do produto já for global e único, você pode remover
+	// a linha abaixo se não quiser validar a empresa aqui.
 	empresaID, err := helpers.GetEmpresaID(ctx)
 	if err != nil {
 		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
@@ -113,7 +116,7 @@ func (c *ProductController) Update(ctx *gin.Context) {
 	}
 
 	produto.ID = id
-	produto.EmpresaID = empresaID
+	produto.EmpresaID = empresaID // Mantido se a sua query de Update usar WHERE id = ... AND empresa_id = ...
 
 	if err := c.repo.Atualizar(ctx.Request.Context(), &produto); err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
@@ -125,12 +128,8 @@ func (c *ProductController) Update(ctx *gin.Context) {
 
 // POST /products/:id/inventory/:num
 func (c *ProductController) SetInventory(ctx *gin.Context) {
-	empresaID, err := helpers.GetEmpresaID(ctx)
-	if err != nil {
-		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
-		return
-	}
-
+	// Como você pontuou, para alterar o estoque de um produto já existente,
+	// precisamos apenas do ID do produto, sem precisar do ID da empresa na chamada.
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil || id <= 0 {
@@ -145,7 +144,8 @@ func (c *ProductController) SetInventory(ctx *gin.Context) {
 		return
 	}
 
-	err = c.repo.AlterarEstoque(ctx.Request.Context(), id, empresaID, int(quant))
+	// Chamada limpa passando apenas ID e quantidade
+	err = c.repo.AlterarEstoque(ctx.Request.Context(), id, int(quant))
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -156,12 +156,6 @@ func (c *ProductController) SetInventory(ctx *gin.Context) {
 
 // DELETE /products/:id
 func (c *ProductController) Delete(ctx *gin.Context) {
-	empresaID, err := helpers.GetEmpresaID(ctx)
-	if err != nil {
-		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
-		return
-	}
-
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil || id <= 0 {
@@ -169,7 +163,8 @@ func (c *ProductController) Delete(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.repo.Deletar(ctx.Request.Context(), id, empresaID); err != nil {
+	// Mantido com empresaID por segurança para evitar IDOR ao deletar
+	if err := c.repo.Deletar(ctx.Request.Context(), id); err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}

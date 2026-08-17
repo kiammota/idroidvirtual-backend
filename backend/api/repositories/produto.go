@@ -48,15 +48,15 @@ func (r *ProdutoRepository) Criar(ctx context.Context, p *models.Produto) error 
 }
 
 // BuscarPorID retorna um produto pelo ID (dentro da empresa)
-func (r *ProdutoRepository) BuscarPorID(ctx context.Context, id int64, empresaID int64) (*models.Produto, error) {
+func (r *ProdutoRepository) BuscarPorID(ctx context.Context, id int) (*models.Produto, error) {
 	query := `
 		SELECT id, empresa_id, nome, preco, categoria, estoque, criado_em, atualizado_em
 		FROM produtos
-		WHERE id = $1 AND empresa_id = $2
+		WHERE id = $1
 	`
 
 	var p models.Produto
-	err := r.Pool.QueryRow(ctx, query, id, empresaID).Scan(
+	err := r.Pool.QueryRow(ctx, query, id).Scan(
 		&p.ID,
 		&p.EmpresaID,
 		&p.Nome,
@@ -82,19 +82,18 @@ func (r *ProdutoRepository) BuscarPorIDTx(
 	ctx context.Context,
 	tx pgx.Tx,
 	id int64,
-	empresaID int64,
 ) (*models.Produto, error) {
 
 	query := `
 		SELECT id, empresa_id, nome, preco, categoria, estoque, criado_em, atualizado_em
 		FROM produtos
-		WHERE id = $1 AND empresa_id = $2
+		WHERE id = $1 
 		FOR UPDATE
 	`
 
 	var p models.Produto
 
-	err := tx.QueryRow(ctx, query, id, empresaID).Scan(
+	err := tx.QueryRow(ctx, query, id).Scan(
 		&p.ID,
 		&p.EmpresaID,
 		&p.Nome,
@@ -234,16 +233,16 @@ func (r *ProdutoRepository) BuscarPorCategoria(ctx context.Context, empresaID in
 	return produtos, nil
 }
 
-// Atualizar altera nome, preço, categoria e estoque do produto
+// Atualizar altera nome, preço, categoria e estoque apenas pelo ID do produto
 func (r *ProdutoRepository) Atualizar(ctx context.Context, p *models.Produto) error {
 	query := `
 		UPDATE produtos
 		SET nome = $1,
-		    preco = $2,
-		    categoria = $3,
-		    estoque = $4,
-		    atualizado_em = NOW()
-		WHERE id = $5 AND empresa_id = $6
+			preco = $2,
+			categoria = $3,
+			estoque = $4,
+			atualizado_em = NOW()
+		WHERE id = $5
 		RETURNING atualizado_em
 	`
 
@@ -255,7 +254,6 @@ func (r *ProdutoRepository) Atualizar(ctx context.Context, p *models.Produto) er
 		p.Categoria,
 		p.Estoque,
 		p.ID,
-		p.EmpresaID,
 	).Scan(&p.AtualizadoEm)
 
 	if err != nil {
@@ -265,8 +263,8 @@ func (r *ProdutoRepository) Atualizar(ctx context.Context, p *models.Produto) er
 	return nil
 }
 
-// AumentarEstoque incrementa a quantidade do produto no estoque
-func (r *ProdutoRepository) AumentarEstoque(ctx context.Context, id int64, empresaID int64, quantidade int) error {
+// AumentarEstoque incrementa a quantidade do produto apenas pelo ID
+func (r *ProdutoRepository) AumentarEstoque(ctx context.Context, id int64, quantidade int) error {
 	if quantidade <= 0 {
 		return errors.New("a quantidade a ser adicionada deve ser maior que zero")
 	}
@@ -274,11 +272,11 @@ func (r *ProdutoRepository) AumentarEstoque(ctx context.Context, id int64, empre
 	query := `
 		UPDATE produtos
 		SET estoque = estoque + $1,
-		    atualizado_em = NOW()
-		WHERE id = $2 AND empresa_id = $3
+			atualizado_em = NOW()
+		WHERE id = $2
 	`
 
-	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id, empresaID)
+	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id)
 	if err != nil {
 		return err
 	}
@@ -290,53 +288,8 @@ func (r *ProdutoRepository) AumentarEstoque(ctx context.Context, id int64, empre
 	return nil
 }
 
-func (r *ProdutoRepository) AlterarEstoque(ctx context.Context, id int64, empresaID int64, quantidade int) error {
-	query := `
-		UPDATE produtos
-		SET estoque = estoque + $1,
-		    atualizado_em = NOW()
-		WHERE id = $2 AND empresa_id = $3
-	`
-
-	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id, empresaID)
-	if err != nil {
-		return err
-	}
-
-	if cmdTag.RowsAffected() == 0 {
-		return errors.New("nenhum produto encontrado")
-	}
-
-	return nil
-}
-
-// AumentarEstoqueTx incrementa o estoque dentro de uma transação
-func (r *ProdutoRepository) AumentarEstoqueTx(ctx context.Context, tx pgx.Tx, id int64, empresaID int64, quantidade int) error {
-	if quantidade <= 0 {
-		return errors.New("a quantidade a ser adicionada deve ser maior que zero")
-	}
-
-	query := `
-		UPDATE produtos
-		SET estoque = estoque + $1,
-		    atualizado_em = NOW()
-		WHERE id = $2 AND empresa_id = $3
-	`
-
-	cmdTag, err := tx.Exec(ctx, query, quantidade, id, empresaID)
-	if err != nil {
-		return err
-	}
-
-	if cmdTag.RowsAffected() == 0 {
-		return errors.New("nenhum produto encontrado para aumentar o estoque")
-	}
-
-	return nil
-}
-
-// DiminuirEstoque decrementa o estoque garantindo valor não negativo
-func (r *ProdutoRepository) DiminuirEstoque(ctx context.Context, id int64, empresaID int64, quantidade int) error {
+// DiminuirEstoque decrementa o estoque garantindo valor não negativo apenas pelo ID
+func (r *ProdutoRepository) DiminuirEstoque(ctx context.Context, id int64, quantidade int) error {
 	if quantidade <= 0 {
 		return errors.New("a quantidade a ser removida deve ser maior que zero")
 	}
@@ -344,47 +297,18 @@ func (r *ProdutoRepository) DiminuirEstoque(ctx context.Context, id int64, empre
 	query := `
 		UPDATE produtos
 		SET estoque = estoque - $1,
-		    atualizado_em = NOW()
-		WHERE id = $2 AND empresa_id = $3 AND estoque >= $1
+			atualizado_em = NOW()
+		WHERE id = $2 AND estoque >= $1
 	`
 
-	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id, empresaID)
-	if err != nil {
-		return err
-	}
-
-	if cmdTag.RowsAffected() == 0 {
-		produto, errBuscar := r.BuscarPorID(ctx, id, empresaID)
-		if errBuscar != nil || produto == nil {
-			return errors.New("nenhum produto encontrado para diminuir o estoque")
-		}
-		return errors.New("estoque insuficiente para realizar a baixa")
-	}
-
-	return nil
-}
-
-// DiminuirEstoqueTx diminui o estoque dentro de uma transação
-func (r *ProdutoRepository) DiminuirEstoqueTx(ctx context.Context, tx pgx.Tx, id int64, empresaID int64, quantidade int) error {
-	if quantidade <= 0 {
-		return errors.New("a quantidade a ser removida deve ser maior que zero")
-	}
-
-	query := `
-		UPDATE produtos
-		SET estoque = estoque - $1,
-		    atualizado_em = NOW()
-		WHERE id = $2 AND empresa_id = $3 AND estoque >= $1
-	`
-
-	cmdTag, err := tx.Exec(ctx, query, quantidade, id, empresaID)
+	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id)
 	if err != nil {
 		return err
 	}
 
 	if cmdTag.RowsAffected() == 0 {
 		var existe bool
-		errExiste := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM produtos WHERE id = $1 AND empresa_id = $2)", id, empresaID).Scan(&existe)
+		errExiste := r.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM produtos WHERE id = $1)", id).Scan(&existe)
 		if errExiste != nil || !existe {
 			return errors.New("nenhum produto encontrado para diminuir o estoque")
 		}
@@ -394,11 +318,62 @@ func (r *ProdutoRepository) DiminuirEstoqueTx(ctx context.Context, tx pgx.Tx, id
 	return nil
 }
 
-// Deletar remove um produto pelo ID (dentro da empresa)
-func (r *ProdutoRepository) Deletar(ctx context.Context, id int64, empresaID int64) error {
-	query := `DELETE FROM produtos WHERE id = $1 AND empresa_id = $2`
+// DiminuirEstoqueTx diminui o estoque dentro de uma transação apenas pelo ID
+func (r *ProdutoRepository) DiminuirEstoqueTx(ctx context.Context, tx pgx.Tx, id int64, quantidade int) error {
+	if quantidade <= 0 {
+		return errors.New("a quantidade a ser removida deve ser maior que zero")
+	}
 
-	cmdTag, err := r.Pool.Exec(ctx, query, id, empresaID)
+	query := `
+		UPDATE produtos
+		SET estoque = estoque - $1,
+			atualizado_em = NOW()
+		WHERE id = $2 AND estoque >= $1
+	`
+
+	cmdTag, err := tx.Exec(ctx, query, quantidade, id)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		var existe bool
+		errExiste := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM produtos WHERE id = $1)", id).Scan(&existe)
+		if errExiste != nil || !existe {
+			return errors.New("nenhum produto encontrado para diminuir o estoque")
+		}
+		return errors.New("estoque insuficiente para realizar a baixa")
+	}
+
+	return nil
+}
+
+// AlterarEstoque atualiza diretamente o estoque do produto somando ou subtraindo a quantidade informada apenas pelo ID
+func (r *ProdutoRepository) AlterarEstoque(ctx context.Context, id int64, quantidade int) error {
+	query := `
+		UPDATE produtos
+		SET estoque = estoque + $1,
+			atualizado_em = NOW()
+		WHERE id = $2
+	`
+
+	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return errors.New("nenhum produto encontrado para alterar o estoque")
+	}
+
+	return nil
+}
+
+// Deletar remove um produto do banco de dados apenas pelo ID
+func (r *ProdutoRepository) Deletar(ctx context.Context, id int64) error {
+	query := `DELETE FROM produtos WHERE id = $1`
+
+	cmdTag, err := r.Pool.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}

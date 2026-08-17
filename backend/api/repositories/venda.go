@@ -230,3 +230,28 @@ func (r *VendaRepository) CancelarTx(ctx context.Context, tx pgx.Tx, vendaID int
 
 	return nil
 }
+
+// AumentarEstoqueTx incrementa o estoque dentro de uma transação apenas pelo ID do produto
+func (r *ProdutoRepository) AumentarEstoqueTx(ctx context.Context, tx pgx.Tx, id int64, quantidade int) error {
+	if quantidade <= 0 {
+		return errors.New("a quantidade a ser adicionada deve ser maior que zero")
+	}
+
+	query := `
+		UPDATE produtos
+		SET estoque = estoque + $1,
+			atualizado_em = NOW()
+		WHERE id = $2
+	`
+
+	cmdTag, err := tx.Exec(ctx, query, quantidade, id)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return errors.New("nenhum produto encontrado para aumentar o estoque")
+	}
+
+	return nil
+}

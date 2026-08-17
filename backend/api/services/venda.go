@@ -176,7 +176,7 @@ func (s *VendaService) CancelarVenda(
 		return errors.New("esta venda já está cancelada")
 	}
 
-	produto, err := s.produtoRepo.BuscarPorID(ctx, venda.ProdutoID)
+	produto, err := s.produtoRepo.BuscarPorID(ctx, int(venda.ProdutoID))
 	if err != nil || produto == nil {
 		return errors.New("produto associado à venda não foi encontrado")
 	}
