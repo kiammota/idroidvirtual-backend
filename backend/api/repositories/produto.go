@@ -19,13 +19,13 @@ func NewProdutoRepository(pool *pgxpool.Pool) ProdutoRepository {
 	return ProdutoRepository{Pool: pool}
 }
 
-// Criar insere um novo produto no banco de dados e retorna o ID e as datas geradas
+// Criar insere um novo produto
 func (r *ProdutoRepository) Criar(ctx context.Context, p *models.Produto) error {
 	query := `
 		INSERT INTO produtos (
-			nome, preco, categoria, estoque
+			empresa_id, nome, preco, categoria, estoque
 		) VALUES (
-			$1, $2, $3, $4
+			$1, $2, $3, $4, $5
 		)
 		RETURNING id, criado_em, atualizado_em
 	`
@@ -33,6 +33,7 @@ func (r *ProdutoRepository) Criar(ctx context.Context, p *models.Produto) error 
 	err := r.Pool.QueryRow(
 		ctx,
 		query,
+		p.EmpresaID,
 		p.Nome,
 		p.Preco,
 		p.Categoria,
@@ -46,53 +47,18 @@ func (r *ProdutoRepository) Criar(ctx context.Context, p *models.Produto) error 
 	return nil
 }
 
-// BuscarPorID retorna um produto pelo seu ID
-func (r *ProdutoRepository) BuscarPorID(ctx context.Context, id int64) (*models.Produto, error) {
+// BuscarPorID retorna um produto pelo ID (dentro da empresa)
+func (r *ProdutoRepository) BuscarPorID(ctx context.Context, id int64, empresaID int64) (*models.Produto, error) {
 	query := `
-		SELECT id, nome, preco, categoria, estoque, criado_em, atualizado_em
+		SELECT id, empresa_id, nome, preco, categoria, estoque, criado_em, atualizado_em
 		FROM produtos
-		WHERE id = $1
+		WHERE id = $1 AND empresa_id = $2
 	`
 
 	var p models.Produto
-	err := r.Pool.QueryRow(ctx, query, id).Scan(
+	err := r.Pool.QueryRow(ctx, query, id, empresaID).Scan(
 		&p.ID,
-		&p.Nome,
-		&p.Preco,
-		&p.Categoria,
-		&p.Estoque,
-		&p.CriadoEm,
-		&p.AtualizadoEm,
-	)
-
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil // Retorna nil se o produto não for encontrado
-		}
-		return nil, err
-	}
-
-	return &p, nil
-}
-
-// BuscarPorIDTx busca por ID dentro de uma transação com trava (FOR UPDATE)
-func (r *ProdutoRepository) BuscarPorIDTx(
-	ctx context.Context,
-	tx pgx.Tx,
-	id int64,
-) (*models.Produto, error) {
-
-	query := `
-		SELECT id, nome, preco, categoria, estoque, criado_em, atualizado_em
-		FROM produtos
-		WHERE id = $1
-		FOR UPDATE
-	`
-
-	var p models.Produto
-
-	err := tx.QueryRow(ctx, query, id).Scan(
-		&p.ID,
+		&p.EmpresaID,
 		&p.Nome,
 		&p.Preco,
 		&p.Categoria,
@@ -105,23 +71,61 @@ func (r *ProdutoRepository) BuscarPorIDTx(
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
-
 		return nil, err
 	}
 
 	return &p, nil
 }
 
-// Listar retorna os produtos com suporte a paginação
-func (r *ProdutoRepository) Listar(ctx context.Context, limit, offset int) ([]models.Produto, error) {
+// BuscarPorIDTx busca por ID dentro de uma transação com trava (FOR UPDATE)
+func (r *ProdutoRepository) BuscarPorIDTx(
+	ctx context.Context,
+	tx pgx.Tx,
+	id int64,
+	empresaID int64,
+) (*models.Produto, error) {
+
 	query := `
-		SELECT id, nome, preco, categoria, estoque, criado_em, atualizado_em
+		SELECT id, empresa_id, nome, preco, categoria, estoque, criado_em, atualizado_em
 		FROM produtos
-		ORDER BY nome ASC
-		LIMIT $1 OFFSET $2
+		WHERE id = $1 AND empresa_id = $2
+		FOR UPDATE
 	`
 
-	rows, err := r.Pool.Query(ctx, query, limit, offset)
+	var p models.Produto
+
+	err := tx.QueryRow(ctx, query, id, empresaID).Scan(
+		&p.ID,
+		&p.EmpresaID,
+		&p.Nome,
+		&p.Preco,
+		&p.Categoria,
+		&p.Estoque,
+		&p.CriadoEm,
+		&p.AtualizadoEm,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+// Listar retorna os produtos da empresa com paginação
+func (r *ProdutoRepository) Listar(ctx context.Context, empresaID int64, limit, offset int) ([]models.Produto, error) {
+	query := `
+		SELECT id, empresa_id, nome, preco, categoria, estoque, criado_em, atualizado_em
+		FROM produtos
+		WHERE empresa_id = $1
+		ORDER BY nome ASC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.Pool.Query(ctx, query, empresaID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -132,6 +136,7 @@ func (r *ProdutoRepository) Listar(ctx context.Context, limit, offset int) ([]mo
 		var p models.Produto
 		err := rows.Scan(
 			&p.ID,
+			&p.EmpresaID,
 			&p.Nome,
 			&p.Preco,
 			&p.Categoria,
@@ -152,18 +157,18 @@ func (r *ProdutoRepository) Listar(ctx context.Context, limit, offset int) ([]mo
 	return produtos, nil
 }
 
-// BuscarPorNome faz uma busca parcial por nome
-func (r *ProdutoRepository) BuscarPorNome(ctx context.Context, nome string, limit, offset int) ([]models.Produto, error) {
+// BuscarPorNome faz busca parcial por nome dentro da empresa
+func (r *ProdutoRepository) BuscarPorNome(ctx context.Context, empresaID int64, nome string, limit, offset int) ([]models.Produto, error) {
 	query := `
-		SELECT id, nome, preco, categoria, estoque, criado_em, atualizado_em
+		SELECT id, empresa_id, nome, preco, categoria, estoque, criado_em, atualizado_em
 		FROM produtos
-		WHERE nome ILIKE $1
+		WHERE empresa_id = $1 AND nome ILIKE $2
 		ORDER BY nome ASC
-		LIMIT $2 OFFSET $3
+		LIMIT $3 OFFSET $4
 	`
 
 	termoBusca := fmt.Sprintf("%%%s%%", nome)
-	rows, err := r.Pool.Query(ctx, query, termoBusca, limit, offset)
+	rows, err := r.Pool.Query(ctx, query, empresaID, termoBusca, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -174,6 +179,7 @@ func (r *ProdutoRepository) BuscarPorNome(ctx context.Context, nome string, limi
 		var p models.Produto
 		err := rows.Scan(
 			&p.ID,
+			&p.EmpresaID,
 			&p.Nome,
 			&p.Preco,
 			&p.Categoria,
@@ -190,17 +196,17 @@ func (r *ProdutoRepository) BuscarPorNome(ctx context.Context, nome string, limi
 	return produtos, nil
 }
 
-// BuscarPorCategoria faz busca por categoria (case-insensitive)
-func (r *ProdutoRepository) BuscarPorCategoria(ctx context.Context, categoria string, limit, offset int) ([]models.Produto, error) {
+// BuscarPorCategoria faz busca por categoria dentro da empresa
+func (r *ProdutoRepository) BuscarPorCategoria(ctx context.Context, empresaID int64, categoria string, limit, offset int) ([]models.Produto, error) {
 	query := `
-		SELECT id, nome, preco, categoria, estoque, criado_em, atualizado_em
+		SELECT id, empresa_id, nome, preco, categoria, estoque, criado_em, atualizado_em
 		FROM produtos
-		WHERE categoria ILIKE $1
+		WHERE empresa_id = $1 AND categoria ILIKE $2
 		ORDER BY nome ASC
-		LIMIT $2 OFFSET $3
+		LIMIT $3 OFFSET $4
 	`
 
-	rows, err := r.Pool.Query(ctx, query, categoria, limit, offset)
+	rows, err := r.Pool.Query(ctx, query, empresaID, categoria, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -211,6 +217,7 @@ func (r *ProdutoRepository) BuscarPorCategoria(ctx context.Context, categoria st
 		var p models.Produto
 		err := rows.Scan(
 			&p.ID,
+			&p.EmpresaID,
 			&p.Nome,
 			&p.Preco,
 			&p.Categoria,
@@ -236,7 +243,7 @@ func (r *ProdutoRepository) Atualizar(ctx context.Context, p *models.Produto) er
 		    categoria = $3,
 		    estoque = $4,
 		    atualizado_em = NOW()
-		WHERE id = $5
+		WHERE id = $5 AND empresa_id = $6
 		RETURNING atualizado_em
 	`
 
@@ -248,6 +255,7 @@ func (r *ProdutoRepository) Atualizar(ctx context.Context, p *models.Produto) er
 		p.Categoria,
 		p.Estoque,
 		p.ID,
+		p.EmpresaID,
 	).Scan(&p.AtualizadoEm)
 
 	if err != nil {
@@ -258,7 +266,7 @@ func (r *ProdutoRepository) Atualizar(ctx context.Context, p *models.Produto) er
 }
 
 // AumentarEstoque incrementa a quantidade do produto no estoque
-func (r *ProdutoRepository) AumentarEstoque(ctx context.Context, id int64, quantidade int) error {
+func (r *ProdutoRepository) AumentarEstoque(ctx context.Context, id int64, empresaID int64, quantidade int) error {
 	if quantidade <= 0 {
 		return errors.New("a quantidade a ser adicionada deve ser maior que zero")
 	}
@@ -267,10 +275,10 @@ func (r *ProdutoRepository) AumentarEstoque(ctx context.Context, id int64, quant
 		UPDATE produtos
 		SET estoque = estoque + $1,
 		    atualizado_em = NOW()
-		WHERE id = $2
+		WHERE id = $2 AND empresa_id = $3
 	`
 
-	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id)
+	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id, empresaID)
 	if err != nil {
 		return err
 	}
@@ -282,19 +290,15 @@ func (r *ProdutoRepository) AumentarEstoque(ctx context.Context, id int64, quant
 	return nil
 }
 
-func (r *ProdutoRepository) AlterarEstoque(
-	ctx context.Context,
-	id int64,
-	quantidade int,
-) error {
+func (r *ProdutoRepository) AlterarEstoque(ctx context.Context, id int64, empresaID int64, quantidade int) error {
 	query := `
 		UPDATE produtos
 		SET estoque = estoque + $1,
 		    atualizado_em = NOW()
-		WHERE id = $2
+		WHERE id = $2 AND empresa_id = $3
 	`
 
-	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id)
+	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id, empresaID)
 	if err != nil {
 		return err
 	}
@@ -307,7 +311,7 @@ func (r *ProdutoRepository) AlterarEstoque(
 }
 
 // AumentarEstoqueTx incrementa o estoque dentro de uma transação
-func (r *ProdutoRepository) AumentarEstoqueTx(ctx context.Context, tx pgx.Tx, id int64, quantidade int) error {
+func (r *ProdutoRepository) AumentarEstoqueTx(ctx context.Context, tx pgx.Tx, id int64, empresaID int64, quantidade int) error {
 	if quantidade <= 0 {
 		return errors.New("a quantidade a ser adicionada deve ser maior que zero")
 	}
@@ -316,10 +320,10 @@ func (r *ProdutoRepository) AumentarEstoqueTx(ctx context.Context, tx pgx.Tx, id
 		UPDATE produtos
 		SET estoque = estoque + $1,
 		    atualizado_em = NOW()
-		WHERE id = $2
+		WHERE id = $2 AND empresa_id = $3
 	`
 
-	cmdTag, err := tx.Exec(ctx, query, quantidade, id)
+	cmdTag, err := tx.Exec(ctx, query, quantidade, id, empresaID)
 	if err != nil {
 		return err
 	}
@@ -331,8 +335,8 @@ func (r *ProdutoRepository) AumentarEstoqueTx(ctx context.Context, tx pgx.Tx, id
 	return nil
 }
 
-// DiminuirEstoque decremanta o estoque garantindo valor não negativo
-func (r *ProdutoRepository) DiminuirEstoque(ctx context.Context, id int64, quantidade int) error {
+// DiminuirEstoque decrementa o estoque garantindo valor não negativo
+func (r *ProdutoRepository) DiminuirEstoque(ctx context.Context, id int64, empresaID int64, quantidade int) error {
 	if quantidade <= 0 {
 		return errors.New("a quantidade a ser removida deve ser maior que zero")
 	}
@@ -341,16 +345,16 @@ func (r *ProdutoRepository) DiminuirEstoque(ctx context.Context, id int64, quant
 		UPDATE produtos
 		SET estoque = estoque - $1,
 		    atualizado_em = NOW()
-		WHERE id = $2 AND estoque >= $1
+		WHERE id = $2 AND empresa_id = $3 AND estoque >= $1
 	`
 
-	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id)
+	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id, empresaID)
 	if err != nil {
 		return err
 	}
 
 	if cmdTag.RowsAffected() == 0 {
-		produto, errBuscar := r.BuscarPorID(ctx, id)
+		produto, errBuscar := r.BuscarPorID(ctx, id, empresaID)
 		if errBuscar != nil || produto == nil {
 			return errors.New("nenhum produto encontrado para diminuir o estoque")
 		}
@@ -361,7 +365,7 @@ func (r *ProdutoRepository) DiminuirEstoque(ctx context.Context, id int64, quant
 }
 
 // DiminuirEstoqueTx diminui o estoque dentro de uma transação
-func (r *ProdutoRepository) DiminuirEstoqueTx(ctx context.Context, tx pgx.Tx, id int64, quantidade int) error {
+func (r *ProdutoRepository) DiminuirEstoqueTx(ctx context.Context, tx pgx.Tx, id int64, empresaID int64, quantidade int) error {
 	if quantidade <= 0 {
 		return errors.New("a quantidade a ser removida deve ser maior que zero")
 	}
@@ -370,17 +374,17 @@ func (r *ProdutoRepository) DiminuirEstoqueTx(ctx context.Context, tx pgx.Tx, id
 		UPDATE produtos
 		SET estoque = estoque - $1,
 		    atualizado_em = NOW()
-		WHERE id = $2 AND estoque >= $1
+		WHERE id = $2 AND empresa_id = $3 AND estoque >= $1
 	`
 
-	cmdTag, err := tx.Exec(ctx, query, quantidade, id)
+	cmdTag, err := tx.Exec(ctx, query, quantidade, id, empresaID)
 	if err != nil {
 		return err
 	}
 
 	if cmdTag.RowsAffected() == 0 {
 		var existe bool
-		errExiste := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM produtos WHERE id = $1)", id).Scan(&existe)
+		errExiste := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM produtos WHERE id = $1 AND empresa_id = $2)", id, empresaID).Scan(&existe)
 		if errExiste != nil || !existe {
 			return errors.New("nenhum produto encontrado para diminuir o estoque")
 		}
@@ -390,11 +394,11 @@ func (r *ProdutoRepository) DiminuirEstoqueTx(ctx context.Context, tx pgx.Tx, id
 	return nil
 }
 
-// Deletar remove um produto pelo ID
-func (r *ProdutoRepository) Deletar(ctx context.Context, id int64) error {
-	query := `DELETE FROM produtos WHERE id = $1`
+// Deletar remove um produto pelo ID (dentro da empresa)
+func (r *ProdutoRepository) Deletar(ctx context.Context, id int64, empresaID int64) error {
+	query := `DELETE FROM produtos WHERE id = $1 AND empresa_id = $2`
 
-	cmdTag, err := r.Pool.Exec(ctx, query, id)
+	cmdTag, err := r.Pool.Exec(ctx, query, id, empresaID)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"backend/gateways"
+	"backend/gateways/helpers"
 	"backend/models"
 	"backend/repositories"
 
@@ -22,10 +23,16 @@ func NewProductController(repo *repositories.ProdutoRepository) *ProductControll
 
 // GET /products
 func (c *ProductController) ListAll(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
 	offset, _ := strconv.Atoi(ctx.DefaultQuery("offset", "0"))
 
-	produtos, err := c.repo.Listar(ctx.Request.Context(), limit, offset)
+	produtos, err := c.repo.Listar(ctx.Request.Context(), empresaID, limit, offset)
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -36,12 +43,19 @@ func (c *ProductController) ListAll(ctx *gin.Context) {
 
 // POST /products
 func (c *ProductController) Create(ctx *gin.Context) {
-	var produto models.Produto
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
+		return
+	}
 
+	var produto models.Produto
 	if err := ctx.ShouldBindJSON(&produto); err != nil {
 		gateways.Error(ctx, http.StatusBadRequest, "Dados inválidos para criação do produto")
 		return
 	}
+
+	produto.EmpresaID = empresaID
 
 	if err := c.repo.Criar(ctx.Request.Context(), &produto); err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
@@ -53,6 +67,12 @@ func (c *ProductController) Create(ctx *gin.Context) {
 
 // GET /products/category/:category
 func (c *ProductController) GetByCategory(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	categoria := strings.TrimSpace(ctx.Param("category"))
 	if categoria == "" {
 		gateways.Error(ctx, http.StatusBadRequest, "Categoria é obrigatória")
@@ -62,7 +82,7 @@ func (c *ProductController) GetByCategory(ctx *gin.Context) {
 	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
 	offset, _ := strconv.Atoi(ctx.DefaultQuery("offset", "0"))
 
-	produtos, err := c.repo.BuscarPorCategoria(ctx.Request.Context(), categoria, limit, offset)
+	produtos, err := c.repo.BuscarPorCategoria(ctx.Request.Context(), empresaID, categoria, limit, offset)
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -71,8 +91,14 @@ func (c *ProductController) GetByCategory(ctx *gin.Context) {
 	gateways.Success(ctx, http.StatusOK, produtos, "Produtos recuperados com sucesso")
 }
 
-// POST /products/:id (Atualização de produto)
+// PUT /products/:id
 func (c *ProductController) Update(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil || id <= 0 {
@@ -87,6 +113,7 @@ func (c *ProductController) Update(ctx *gin.Context) {
 	}
 
 	produto.ID = id
+	produto.EmpresaID = empresaID
 
 	if err := c.repo.Atualizar(ctx.Request.Context(), &produto); err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
@@ -95,7 +122,15 @@ func (c *ProductController) Update(ctx *gin.Context) {
 
 	gateways.Success(ctx, http.StatusOK, produto, "Produto atualizado com sucesso")
 }
+
+// POST /products/:id/inventory/:num
 func (c *ProductController) SetInventory(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil || id <= 0 {
@@ -105,22 +140,28 @@ func (c *ProductController) SetInventory(ctx *gin.Context) {
 
 	idQuant := ctx.Param("num")
 	quant, err := strconv.ParseInt(idQuant, 10, 64)
-	if err != nil || quant < 0 {
+	if err != nil {
 		gateways.Error(ctx, http.StatusBadRequest, "Quantidade é inválida!")
 		return
 	}
 
-	err = c.repo.AlterarEstoque(ctx, id, int(quant))
+	err = c.repo.AlterarEstoque(ctx.Request.Context(), id, empresaID, int(quant))
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	gateways.Success(ctx, 200, nil, "Estoque alterado com sucesso!")
+	gateways.Success(ctx, http.StatusOK, nil, "Estoque alterado com sucesso!")
 }
 
 // DELETE /products/:id
 func (c *ProductController) Delete(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil || id <= 0 {
@@ -128,7 +169,7 @@ func (c *ProductController) Delete(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.repo.Deletar(ctx.Request.Context(), id); err != nil {
+	if err := c.repo.Deletar(ctx.Request.Context(), id, empresaID); err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
