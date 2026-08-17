@@ -34,12 +34,12 @@ func NewOrdensServicoService(
 	}
 }
 
-func (s *OrdensServicoService) ListarPorPeriodo(ctx context.Context, inicio, fim time.Time) ([]models.OrdemServico, error) {
+func (s *OrdensServicoService) ListarPorPeriodo(ctx context.Context, empresaID int64, inicio, fim time.Time) ([]models.OrdemServico, error) {
 	if inicio.After(fim) {
 		return nil, errors.New("a data inicial não pode ser maior que a data final")
 	}
 
-	return s.OrdensServicoRepo.ListarPorPeriodo(ctx, inicio, fim)
+	return s.OrdensServicoRepo.ListarPorPeriodo(ctx, empresaID, inicio, fim)
 }
 
 // POST /service-orders
@@ -136,14 +136,14 @@ func apenasNumeros(s string) string {
 }
 
 // GET /service-orders
-func (s *OrdensServicoService) Listar(ctx context.Context, limit, offset int) ([]models.OrdemServico, error) {
+func (s *OrdensServicoService) Listar(ctx context.Context, empresaID int64, limit, offset int) ([]models.OrdemServico, error) {
 	if limit <= 0 {
 		limit = 10
 	}
 	if offset < 0 {
 		offset = 0
 	}
-	return s.OrdensServicoRepo.Listar(ctx, limit, offset)
+	return s.OrdensServicoRepo.Listar(ctx, empresaID, limit, offset)
 }
 
 func (s *OrdensServicoService) ListarPorStatus(ctx context.Context, status string, limit, offset int) ([]models.OrdemServico, error) {
@@ -336,11 +336,11 @@ func (s *OrdensServicoService) BuscarPorNumeroCliente(ctx context.Context, numer
 }
 
 // GET /service-orders/three-months
-func (s *OrdensServicoService) UltimosTresMeses(ctx context.Context) ([]models.OrdemServico, error) {
-	return s.OrdensServicoRepo.UltimosTresMeses(ctx)
+func (s *OrdensServicoService) UltimosTresMeses(ctx context.Context, empresaID int64) ([]models.OrdemServico, error) {
+	return s.OrdensServicoRepo.UltimosTresMeses(ctx, empresaID)
 }
 
 // GET /service-orders/six-months
-func (s *OrdensServicoService) UltimosSeisMeses(ctx context.Context) ([]models.OrdemServico, error) {
-	return s.OrdensServicoRepo.UltimosSeisMeses(ctx)
+func (s *OrdensServicoService) UltimosSeisMeses(ctx context.Context, empresaID int64) ([]models.OrdemServico, error) {
+	return s.OrdensServicoRepo.UltimosSeisMeses(ctx, empresaID)
 }

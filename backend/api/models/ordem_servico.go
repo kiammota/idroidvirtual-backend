@@ -4,6 +4,7 @@ import "time"
 
 type OrdemServico struct {
 	ID              int64     `json:"id"`
+	EmpresaID       int64     `json:"empresa_id"`
 	NumeroOrdem     int64     `json:"numero_ordem"`
 	NomeServico     string    `json:"nome_servico"`
 	UsuarioID       int64     `json:"usuario_id"`

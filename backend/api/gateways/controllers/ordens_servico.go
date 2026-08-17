@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"backend/gateways"
+	"backend/gateways/helpers"
 	"backend/models"
 	"backend/services"
 
@@ -36,14 +37,29 @@ func parsePaginationParams(ctx *gin.Context) (int, int) {
 
 // POST /service-orders
 func (c *OrdemServicoController) Criar(ctx *gin.Context) {
-	var ordem models.OrdemServico
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, "não autorizado: "+err.Error())
+		return
+	}
 
+	usuarioID, err := helpers.GetUserID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, "não autorizado: "+err.Error())
+		return
+	}
+
+	var ordem models.OrdemServico
 	if !gateways.BindJSON(ctx, &ordem) {
 		return
 	}
 
-	// 3. Executa a criação já com os IDs devidamente preenchidos
-	err := c.Service.Criar(ctx.Request.Context(), &ordem)
+	// Injeta os IDs extraídos do token na ordem de serviço
+	ordem.EmpresaID = empresaID
+	ordem.UsuarioID = usuarioID
+
+	// Executa a criação
+	err = c.Service.Criar(ctx.Request.Context(), &ordem)
 	if err != nil {
 		gateways.Error(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -54,33 +70,22 @@ func (c *OrdemServicoController) Criar(ctx *gin.Context) {
 
 // GET /service-orders
 func (c *OrdemServicoController) Listar(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, "não autorizado")
+		return
+	}
+
 	limit, offset := parsePaginationParams(ctx)
 
-	ordens, err := c.Service.Listar(ctx, limit, offset)
+	// Passa o empresaID para o service
+	ordens, err := c.Service.Listar(ctx.Request.Context(), empresaID, limit, offset)
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	gateways.Success(ctx, http.StatusOK, ordens, "ordens listadas com sucesso")
-}
-
-func (c *OrdemServicoController) ListarPorStatus(ctx *gin.Context) {
-	limit, offset := parsePaginationParams(ctx)
-	status := ctx.Query("status")
-
-	if status == "" {
-		gateways.Error(ctx, http.StatusBadRequest, "o parâmetro status é obrigatório")
-		return
-	}
-
-	ordens, err := c.Service.ListarPorStatus(ctx, status, limit, offset)
-	if err != nil {
-		gateways.Error(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	gateways.Success(ctx, http.StatusOK, ordens, "ordens listadas por status com sucesso")
 }
 
 // GET /service-orders/:id
@@ -91,7 +96,8 @@ func (c *OrdemServicoController) BuscarPorID(ctx *gin.Context) {
 		return
 	}
 
-	ordem, err := c.Service.BuscarPorID(ctx, id)
+	// Como definido no repository, BuscarPorID exige apenas o ID da OS
+	ordem, err := c.Service.BuscarPorID(ctx.Request.Context(), id)
 	if err != nil {
 		gateways.Error(ctx, http.StatusNotFound, err.Error())
 		return
@@ -102,18 +108,27 @@ func (c *OrdemServicoController) BuscarPorID(ctx *gin.Context) {
 
 // PATCH /service-orders/:id
 func (c *OrdemServicoController) Atualizar(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, "não autorizado")
+		return
+	}
+
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
 		gateways.Error(ctx, http.StatusBadRequest, "id inválido")
 		return
 	}
-	var patch models.OrdemServico
 
+	var patch models.OrdemServico
 	if !gateways.BindJSON(ctx, &patch) {
 		return
 	}
 
-	err = c.Service.Atualizar(ctx, id, &patch)
+	// Garante que o usuário não mude a OS de empresa
+	patch.EmpresaID = empresaID
+
+	err = c.Service.Atualizar(ctx.Request.Context(), id, &patch)
 	if err != nil {
 		gateways.Error(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -130,7 +145,8 @@ func (c *OrdemServicoController) Deletar(ctx *gin.Context) {
 		return
 	}
 
-	err = c.Service.Deletar(ctx, id)
+	// O Service deve receber o contexto e o ID. (O repository só precisa do ID).
+	err = c.Service.Deletar(ctx.Request.Context(), id)
 	if err != nil {
 		gateways.Error(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -139,70 +155,16 @@ func (c *OrdemServicoController) Deletar(ctx *gin.Context) {
 	gateways.Success(ctx, http.StatusOK, nil, "ordem de serviço removida com sucesso")
 }
 
-// GET /service-orders/client-id/:cliente_id
-func (c *OrdemServicoController) BuscarPorClienteID(ctx *gin.Context) {
-	clienteID, err := strconv.ParseInt(ctx.Param("cliente_id"), 10, 64)
-	if err != nil || clienteID <= 0 {
-		gateways.Error(ctx, http.StatusBadRequest, "cliente_id inválido")
-		return
-	}
-
-	limit, offset := parsePaginationParams(ctx)
-
-	ordens, err := c.Service.BuscarPorClienteID(ctx, clienteID, limit, offset)
-	if err != nil {
-		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	gateways.Success(ctx, http.StatusOK, ordens, "ordens do cliente encontradas")
-}
-
-// GET /service-orders/client-name/:client_name
-func (c *OrdemServicoController) BuscarPorNomeCliente(ctx *gin.Context) {
-	nome := ctx.Param("client_name")
-	limit, offset := parsePaginationParams(ctx)
-
-	ordens, err := c.Service.BuscarPorNomeCliente(ctx, nome, limit, offset)
-	if err != nil {
-		gateways.Error(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	gateways.Success(ctx, http.StatusOK, ordens, "ordens buscadas por nome com sucesso")
-}
-
-// GET /service-orders/client-email/:client_email
-func (c *OrdemServicoController) BuscarPorEmailCliente(ctx *gin.Context) {
-	email := ctx.Param("client_email")
-	limit, offset := parsePaginationParams(ctx)
-
-	ordens, err := c.Service.BuscarPorEmailCliente(ctx, email, limit, offset)
-	if err != nil {
-		gateways.Error(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	gateways.Success(ctx, http.StatusOK, ordens, "ordens buscadas por email com sucesso")
-}
-
-// GET /service-orders/client-number/:client_number
-func (c *OrdemServicoController) BuscarPorNumeroCliente(ctx *gin.Context) {
-	numero := ctx.Param("client_number")
-	limit, offset := parsePaginationParams(ctx)
-
-	ordens, err := c.Service.BuscarPorNumeroCliente(ctx, numero, limit, offset)
-	if err != nil {
-		gateways.Error(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	gateways.Success(ctx, http.StatusOK, ordens, "ordens buscadas por número de telefone com sucesso")
-}
-
 // GET /service-orders/three-months
 func (c *OrdemServicoController) UltimosTresMeses(ctx *gin.Context) {
-	ordens, err := c.Service.UltimosTresMeses(ctx)
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, "não autorizado")
+		return
+	}
+
+	// Adiciona empresaID
+	ordens, err := c.Service.UltimosTresMeses(ctx.Request.Context(), empresaID)
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -213,7 +175,14 @@ func (c *OrdemServicoController) UltimosTresMeses(ctx *gin.Context) {
 
 // GET /service-orders/six-months
 func (c *OrdemServicoController) UltimosSeisMeses(ctx *gin.Context) {
-	ordens, err := c.Service.UltimosSeisMeses(ctx)
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, "não autorizado")
+		return
+	}
+
+	// Adiciona empresaID
+	ordens, err := c.Service.UltimosSeisMeses(ctx.Request.Context(), empresaID)
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
