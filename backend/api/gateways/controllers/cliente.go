@@ -1,32 +1,22 @@
 package controllers
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"backend/gateways/helpers"
 	"backend/models"
+	"backend/repositories"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Interface ajustada conforme os métodos exatos do seu ClienteRepository
-type ClientRepository interface {
-	Criar(ctx context.Context, c *models.Cliente) error
-	BuscarPorID(ctx context.Context, id int64) (*models.Cliente, error)
-	Listar(ctx context.Context, limit, offset int) ([]models.Cliente, error)
-	BuscarPorNome(ctx context.Context, nome string, limit, offset int) ([]models.Cliente, error)
-	BuscarPorTelefone(ctx context.Context, telefone string) ([]models.Cliente, error)
-	BuscarPorEndereco(ctx context.Context, endereco string) ([]models.Cliente, error)
-	BuscarPorEmail(ctx context.Context, email string) ([]models.Cliente, error)
-}
-
 type ClientController struct {
-	repo ClientRepository
+	repo *repositories.ClienteRepository
 }
 
-func NewClientController(repo ClientRepository) *ClientController {
+func NewClientController(repo *repositories.ClienteRepository) *ClientController {
 	return &ClientController{repo: repo}
 }
 
@@ -41,6 +31,17 @@ func (c *ClientController) Create(ctx *gin.Context) {
 		})
 		return
 	}
+
+	// Injeta o empresa_id automaticamente a partir do token JWT
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"message": "Não foi possível identificar a empresa do usuário",
+		})
+		return
+	}
+	client.EmpresaID = empresaID
 
 	if err := c.repo.Criar(ctx.Request.Context(), &client); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -59,10 +60,19 @@ func (c *ClientController) Create(ctx *gin.Context) {
 
 // GET /clients/
 func (c *ClientController) ListAll(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"message": "Não foi possível identificar a empresa do usuário",
+		})
+		return
+	}
+
 	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
 	offset, _ := strconv.Atoi(ctx.DefaultQuery("offset", "0"))
 
-	clientes, err := c.repo.Listar(ctx.Request.Context(), limit, offset)
+	clientes, err := c.repo.Listar(ctx.Request.Context(), empresaID, limit, offset)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -114,6 +124,15 @@ func (c *ClientController) GetByID(ctx *gin.Context) {
 
 // GET /clients/number?telefone=...
 func (c *ClientController) SearchByPhone(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"message": "Não foi possível identificar a empresa do usuário",
+		})
+		return
+	}
+
 	phone := strings.TrimSpace(ctx.Query("telefone"))
 	if phone == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -123,7 +142,7 @@ func (c *ClientController) SearchByPhone(ctx *gin.Context) {
 		return
 	}
 
-	clientes, err := c.repo.BuscarPorTelefone(ctx.Request.Context(), phone)
+	clientes, err := c.repo.BuscarPorTelefone(ctx.Request.Context(), empresaID, phone)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -140,6 +159,15 @@ func (c *ClientController) SearchByPhone(ctx *gin.Context) {
 
 // GET /clients/address?endereco=...
 func (c *ClientController) SearchByAddress(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"message": "Não foi possível identificar a empresa do usuário",
+		})
+		return
+	}
+
 	address := strings.TrimSpace(ctx.Query("endereco"))
 	if address == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -149,7 +177,7 @@ func (c *ClientController) SearchByAddress(ctx *gin.Context) {
 		return
 	}
 
-	clientes, err := c.repo.BuscarPorEndereco(ctx.Request.Context(), address)
+	clientes, err := c.repo.BuscarPorEndereco(ctx.Request.Context(), empresaID, address)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -166,6 +194,15 @@ func (c *ClientController) SearchByAddress(ctx *gin.Context) {
 
 // GET /clients/name?nome=...
 func (c *ClientController) SearchByName(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"message": "Não foi possível identificar a empresa do usuário",
+		})
+		return
+	}
+
 	nome := strings.TrimSpace(ctx.Query("nome"))
 	if nome == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -178,7 +215,7 @@ func (c *ClientController) SearchByName(ctx *gin.Context) {
 	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
 	offset, _ := strconv.Atoi(ctx.DefaultQuery("offset", "0"))
 
-	clientes, err := c.repo.BuscarPorNome(ctx.Request.Context(), nome, limit, offset)
+	clientes, err := c.repo.BuscarPorNome(ctx.Request.Context(), empresaID, nome, limit, offset)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -195,6 +232,15 @@ func (c *ClientController) SearchByName(ctx *gin.Context) {
 
 // GET /clients/email?email=...
 func (c *ClientController) SearchByEmail(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"message": "Não foi possível identificar a empresa do usuário",
+		})
+		return
+	}
+
 	email := strings.TrimSpace(ctx.Query("email"))
 	if email == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -204,7 +250,7 @@ func (c *ClientController) SearchByEmail(ctx *gin.Context) {
 		return
 	}
 
-	clientes, err := c.repo.BuscarPorEmail(ctx.Request.Context(), email)
+	clientes, err := c.repo.BuscarPorEmail(ctx.Request.Context(), empresaID, email)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
