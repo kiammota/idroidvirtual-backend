@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"backend/gateways/helpers"
 	"backend/models"
 	"backend/services"
 
@@ -23,7 +24,8 @@ func NewTrocaController(service services.TrocaService) *TrocaController {
 
 // POST /trocas
 func (h *TrocaController) Criar(c *gin.Context) {
-	empresaID, err := h.obterEmpresaID(c)
+	// Utilizando o helper para pegar o ID da empresa do token
+	empresaID, err := helpers.GetEmpresaID(c)
 	if err != nil || empresaID <= 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Não foi possível identificar a empresa na requisição",
@@ -39,7 +41,7 @@ func (h *TrocaController) Criar(c *gin.Context) {
 		return
 	}
 
-	// Injeta o ID da empresa recuperado pelo getter
+	// Injeta o ID da empresa recuperado do token
 	input.EmpresaID = empresaID
 
 	if err := h.trocaService.ProcessarTroca(c.Request.Context(), &input); err != nil {
@@ -54,7 +56,8 @@ func (h *TrocaController) Criar(c *gin.Context) {
 
 // GET /trocas/:id
 func (h *TrocaController) ObterPorID(c *gin.Context) {
-	empresaID, err := h.obterEmpresaID(c)
+	// Utilizando o helper
+	empresaID, err := helpers.GetEmpresaID(c)
 	if err != nil || empresaID <= 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Não foi possível identificar a empresa na requisição",
@@ -118,7 +121,8 @@ func (h *TrocaController) executarListagem(
 	c *gin.Context,
 	fn func(ctx context.Context, empresaID int64, limit, offset int) ([]*models.Troca, error),
 ) {
-	empresaID, err := h.obterEmpresaID(c)
+	// Utilizando o helper aqui também
+	empresaID, err := helpers.GetEmpresaID(c)
 	if err != nil || empresaID <= 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Não foi possível identificar a empresa na requisição",
@@ -135,39 +139,6 @@ func (h *TrocaController) executarListagem(
 	}
 
 	c.JSON(http.StatusOK, trocas)
-}
-
-// ==========================================
-// GETTERS E FUNÇÕES AUXILIARES (HELPERS)
-// ==========================================
-
-// Função para recuperar o ID da empresa (Getter)
-func (h *TrocaController) obterEmpresaID(c *gin.Context) (int64, error) {
-	// OPÇÃO 1: Pegar de um contexto definido por um middleware de autenticação JWT
-	// Se você tiver um middleware fazendo `c.Set("empresaID", id)`:
-	if idVal, exists := c.Get("empresaID"); exists {
-		// Tenta fazer o assert dependendo do tipo salvo (pode ser int, int64, float64 se vier de JSON)
-		switch v := idVal.(type) {
-		case int64:
-			return v, nil
-		case int:
-			return int64(v), nil
-		case float64:
-			return int64(v), nil
-		}
-	}
-
-	// OPÇÃO 2: Pegar direto de um Header HTTP (Ex: X-Empresa-ID)
-	// Muito útil caso o tenant seja passado pelo front-end nos headers
-	headerVal := c.GetHeader("X-Empresa-ID")
-	if headerVal != "" {
-		id, err := strconv.ParseInt(headerVal, 10, 64)
-		if err == nil {
-			return id, nil
-		}
-	}
-
-	return 0, http.ErrNoCookie // Ou crie um erro customizado, ex: errors.New("empresaID não encontrado")
 }
 
 // Função auxiliar para extrair e validar limit e offset dos query params
