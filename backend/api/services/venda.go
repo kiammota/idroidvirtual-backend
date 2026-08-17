@@ -76,7 +76,6 @@ func (s *VendaService) ExecutarVenda(
 	produtoID int64,
 	quantidade int,
 	tipoPagamento string,
-	clienteID int64, // 0 = Consumidor Final
 ) (*models.Venda, error) {
 
 	if quantidade <= 0 {
@@ -113,17 +112,6 @@ func (s *VendaService) ExecutarVenda(
 		return nil, errors.New("usuário associado à venda não foi encontrado")
 	}
 
-	// 3. Cliente (opcional)
-	if clienteID > 0 {
-		cliente, err := s.clienteRepo.BuscarPorIDTx(ctx, tx, clienteID)
-		if err != nil {
-			return nil, fmt.Errorf("erro ao buscar cliente: %w", err)
-		}
-		if cliente == nil {
-			return nil, errors.New("cliente informado não foi encontrado")
-		}
-	}
-
 	// 4. Baixa de estoque
 	if err := s.produtoRepo.DiminuirEstoqueTx(ctx, tx, produtoID, quantidade); err != nil {
 		return nil, fmt.Errorf("falha ao dar baixa no estoque: %w", err)
@@ -134,7 +122,6 @@ func (s *VendaService) ExecutarVenda(
 	venda := &models.Venda{
 		ProdutoID:     produtoID,
 		UsuarioID:     usuarioID,
-		ClienteID:     clienteID, // 0 = Consumidor Final
 		Quantidade:    quantidade,
 		Total:         valorTotal,
 		TipoPagamento: tipoPagamento,
