@@ -11,6 +11,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const (
+	API_VERSION = "1.0.1"
+)
+
 type Config struct {
 	Porta         string
 	URLBancoDados string

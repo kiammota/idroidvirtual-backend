@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+
 	logger.Log("Iniciando aplicação")
 
 	// 1. Configurações e Conexão ao Banco
@@ -125,6 +126,7 @@ func main() {
 
 	logger.OK("Swagger disponível")
 	logger.Log("Servidor iniciando na porta " + cfg.Porta)
+	logger.Log("VERSÃO DA API: ", API_VERSION)
 
 	if err := engine.Run("0.0.0.0:" + cfg.Porta); err != nil {
 		logger.Err("Falha ao iniciar servidor: " + err.Error())
