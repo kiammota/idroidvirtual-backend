@@ -26,6 +26,10 @@ func (s *TrocaService) ProcessarTroca(
 	troca *models.Troca,
 ) error {
 
+	if troca.EmpresaID <= 0 {
+		return errors.New("o ID da empresa é obrigatório")
+	}
+
 	if troca.ModeloAparelho == "" {
 		return errors.New("o modelo do aparelho de troca é obrigatório")
 	}
@@ -47,15 +51,21 @@ func (s *TrocaService) ProcessarTroca(
 func (s *TrocaService) ObterPorID(
 	ctx context.Context,
 	id int64,
+	empresaID int64,
 ) (*models.Troca, error) {
 
 	if id <= 0 {
 		return nil, errors.New("ID inválido")
 	}
 
+	if empresaID <= 0 {
+		return nil, errors.New("ID da empresa inválido")
+	}
+
 	troca, err := s.trocaRepo.BuscarPorID(
 		ctx,
 		id,
+		empresaID,
 	)
 
 	if err != nil {
@@ -70,10 +80,15 @@ func (s *TrocaService) ObterPorID(
 
 func (s *TrocaService) Listar(
 	ctx context.Context,
+	empresaID int64,
 	limit, offset int,
 ) ([]*models.Troca, error) {
 
-	trocas, err := s.trocaRepo.Listar(ctx, limit, offset)
+	if empresaID <= 0 {
+		return nil, errors.New("ID da empresa inválido")
+	}
+
+	trocas, err := s.trocaRepo.Listar(ctx, empresaID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar trocas: %w", err)
 	}
@@ -83,10 +98,15 @@ func (s *TrocaService) Listar(
 
 func (s *TrocaService) ListarUltimoMes(
 	ctx context.Context,
+	empresaID int64,
 	limit, offset int,
 ) ([]*models.Troca, error) {
 
-	trocas, err := s.trocaRepo.ListarUltimoMes(ctx, limit, offset)
+	if empresaID <= 0 {
+		return nil, errors.New("ID da empresa inválido")
+	}
+
+	trocas, err := s.trocaRepo.ListarUltimoMes(ctx, empresaID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar trocas do último mês: %w", err)
 	}
@@ -96,10 +116,15 @@ func (s *TrocaService) ListarUltimoMes(
 
 func (s *TrocaService) ListarUltimosTresMeses(
 	ctx context.Context,
+	empresaID int64,
 	limit, offset int,
 ) ([]*models.Troca, error) {
 
-	trocas, err := s.trocaRepo.ListarUltimosTresMeses(ctx, limit, offset)
+	if empresaID <= 0 {
+		return nil, errors.New("ID da empresa inválido")
+	}
+
+	trocas, err := s.trocaRepo.ListarUltimosTresMeses(ctx, empresaID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar trocas dos últimos 3 meses: %w", err)
 	}
@@ -109,10 +134,15 @@ func (s *TrocaService) ListarUltimosTresMeses(
 
 func (s *TrocaService) ListarUltimosSeisMeses(
 	ctx context.Context,
+	empresaID int64,
 	limit, offset int,
 ) ([]*models.Troca, error) {
 
-	trocas, err := s.trocaRepo.ListarUltimosSeisMeses(ctx, limit, offset)
+	if empresaID <= 0 {
+		return nil, errors.New("ID da empresa inválido")
+	}
+
+	trocas, err := s.trocaRepo.ListarUltimosSeisMeses(ctx, empresaID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar trocas dos últimos 6 meses: %w", err)
 	}
