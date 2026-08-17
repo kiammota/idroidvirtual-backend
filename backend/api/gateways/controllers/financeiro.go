@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"backend/gateways"
+	"backend/gateways/helpers"
 	"backend/services"
 
 	"github.com/gin-gonic/gin"
@@ -20,9 +21,15 @@ func NewFinanceiroController(financeiroService *services.FinanceiroService) *Fin
 	}
 }
 
-// ObterHoje retorna o resumo financeiro do dia atual
+// ObterHoje retorna o resumo financeiro do dia atual para a empresa autenticada
 func (c *FinanceiroController) ObterHoje(ctx *gin.Context) {
-	resumo, err := c.financeiroService.FechamentoPorPeriodo(ctx.Request.Context())
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, "Não foi possível identificar a empresa: "+err.Error())
+		return
+	}
+
+	resumo, err := c.financeiroService.FechamentoPorPeriodo(ctx.Request.Context(), empresaID)
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, "Erro ao buscar resumo financeiro do dia: "+err.Error())
 		return
@@ -31,9 +38,15 @@ func (c *FinanceiroController) ObterHoje(ctx *gin.Context) {
 	gateways.Success(ctx, http.StatusOK, resumo, "Resumo financeiro do dia obtido com sucesso")
 }
 
-// ObterMesAtual retorna o resumo financeiro do mês corrente
+// ObterMesAtual retorna o resumo financeiro do mês corrente para a empresa autenticada
 func (c *FinanceiroController) ObterMesAtual(ctx *gin.Context) {
-	resumo, err := c.financeiroService.ObterFinanceiroDoMes(ctx.Request.Context())
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, "Não foi possível identificar a empresa: "+err.Error())
+		return
+	}
+
+	resumo, err := c.financeiroService.ObterFinanceiroDoMes(ctx.Request.Context(), empresaID)
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, "Erro ao buscar resumo financeiro do mês: "+err.Error())
 		return
@@ -42,8 +55,14 @@ func (c *FinanceiroController) ObterMesAtual(ctx *gin.Context) {
 	gateways.Success(ctx, http.StatusOK, resumo, "Resumo financeiro do mês obtido com sucesso")
 }
 
-// ObterPorIntervalo busca o resumo financeiro entre duas datas (Formato: YYYY-MM-DD)
+// ObterPorIntervalo busca o resumo financeiro entre duas datas para a empresa autenticada (Formato: YYYY-MM-DD)
 func (c *FinanceiroController) ObterPorIntervalo(ctx *gin.Context) {
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, "Não foi possível identificar a empresa: "+err.Error())
+		return
+	}
+
 	dataInicioStr := ctx.Query("inicio")
 	dataFimStr := ctx.Query("fim")
 
@@ -67,7 +86,7 @@ func (c *FinanceiroController) ObterPorIntervalo(ctx *gin.Context) {
 	// Ajusta o fim do dia para incluir todas as horas até 23:59:59
 	fim := time.Date(fimRaw.Year(), fimRaw.Month(), fimRaw.Day(), 23, 59, 59, 999999999, fimRaw.Location())
 
-	resumo, err := c.financeiroService.ObterFinanceiroPorIntervalo(ctx.Request.Context(), inicio, fim)
+	resumo, err := c.financeiroService.ObterFinanceiroPorIntervalo(ctx.Request.Context(), empresaID, inicio, fim)
 	if err != nil {
 		gateways.Error(ctx, http.StatusBadRequest, err.Error())
 		return

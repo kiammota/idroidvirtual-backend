@@ -20,8 +20,8 @@ func NewFinanceiroRepository(pool *pgxpool.Pool) *FinanceiroRepository {
 	}
 }
 
-// ObterResumoPorPeriodo executa uma única query otimizada agregando vendas, OS, trocas e despesas
-func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio, fim time.Time) (*models.ResumoFinanceiro, error) {
+// ObterResumoPorPeriodo executa uma única query otimizada agregando vendas, OS, trocas e despesas filtradas por empresa
+func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, empresaID int64, inicio, fim time.Time) (*models.ResumoFinanceiro, error) {
 	query := `
 		WITH 
 		vendas_summary AS (
@@ -29,7 +29,8 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 				COALESCE(SUM(total), 0) AS total_vendas,
 				COUNT(*) AS qtd_vendas
 			FROM vendas
-			WHERE status != 'CANCELADA'
+			WHERE empresa_id = $3
+			  AND status != 'CANCELADA'
 			  AND criado_em BETWEEN $1 AND $2
 		),
 		os_summary AS (
@@ -38,7 +39,8 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 				COALESCE(SUM(custo), 0) AS custo_servicos,
 				COUNT(*) AS qtd_os
 			FROM ordens_servico
-			WHERE status = 'FINALIZADA'
+			WHERE empresa_id = $3
+			  AND status = 'CONCLUIDA'
 			  AND criado_em BETWEEN $1 AND $2
 		),
 		trocas_summary AS (
@@ -46,13 +48,15 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 				COALESCE(SUM(valor_avaliacao), 0) AS valor_estoque_perdido,
 				COUNT(*) AS qtd_perdas
 			FROM trocas
-			WHERE criado_em BETWEEN $1 AND $2
+			WHERE empresa_id = $3
+			  AND criado_em BETWEEN $1 AND $2
 		),
 		despesas_summary AS (
 			SELECT 
 				COALESCE(SUM(valor_pago), 0) AS total_despesas
 			FROM despesas
-			WHERE status = 'PAGO'
+			WHERE empresa_id = $3
+			  AND status = 'PAGO'
 			  AND data_pagamento BETWEEN $1 AND $2
 		)
 		SELECT 
@@ -81,7 +85,8 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 		totalDespesas       float64
 	)
 
-	err := r.pool.QueryRow(ctx, query, inicio, fim).Scan(
+	// Passando inicio, fim e empresaID ($1, $2, $3)
+	err := r.pool.QueryRow(ctx, query, inicio, fim, empresaID).Scan(
 		&totalVendas,
 		&qtdVendas,
 		&totalServicos,
@@ -95,8 +100,8 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 		return nil, fmt.Errorf("erro ao buscar dados financeiros otimizados: %w", err)
 	}
 
-	// Busca detalhamento por forma de pagamento
-	formasPagamento, err := r.obterFormasPagamento(ctx, inicio, fim)
+	// Busca detalhamento por forma de pagamento passando o empresaID
+	formasPagamento, err := r.obterFormasPagamento(ctx, empresaID, inicio, fim)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar formas de pagamento: %w", err)
 	}
@@ -129,7 +134,7 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 		QuantidadeVendas:    qtdVendas,
 		TicketMedioVenda:    ticketMedioVenda,
 		TotalServicos:       totalServicos,
-		CustoServicos:       custoServicos, // Lembre-se de adicionar o campo CustoServicos no model ResumoFinanceiro se desejar exibi-lo
+		CustoServicos:       custoServicos,
 		QuantidadeOS:        qtdOS,
 		TicketMedioServico:  ticketMedioServico,
 		FaturamentoBruto:    faturamentoBruto,
@@ -142,19 +147,20 @@ func (r *FinanceiroRepository) ObterResumoPorPeriodo(ctx context.Context, inicio
 	}, nil
 }
 
-// Auxiliar para listar totais agrupados por forma de pagamento
-func (r *FinanceiroRepository) obterFormasPagamento(ctx context.Context, inicio, fim time.Time) ([]models.DetalhePagamento, error) {
+// Auxiliar para listar totais agrupados por forma de pagamento filtrados por empresa
+func (r *FinanceiroRepository) obterFormasPagamento(ctx context.Context, empresaID int64, inicio, fim time.Time) ([]models.DetalhePagamento, error) {
 	query := `
 		SELECT 
 			COALESCE(tipo_pagamento, 'NÃO INFORMADO') AS tipo_pagamento, 
 			COALESCE(SUM(total), 0) AS total
 		FROM vendas
-		WHERE status != 'CANCELADA'
+		WHERE empresa_id = $3
+		  AND status != 'CANCELADA'
 		  AND criado_em BETWEEN $1 AND $2
 		GROUP BY tipo_pagamento;
 	`
 
-	rows, err := r.pool.Query(ctx, query, inicio, fim)
+	rows, err := r.pool.Query(ctx, query, inicio, fim, empresaID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao consultar formas de pagamento: %w", err)
 	}
