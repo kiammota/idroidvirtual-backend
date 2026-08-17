@@ -6,7 +6,6 @@ import (
 
 	"backend/gateways"
 	"backend/gateways/helpers"
-	"backend/models"
 	"backend/services"
 
 	"github.com/gin-gonic/gin"
@@ -25,16 +24,36 @@ func NewVendasController(vendaService *services.VendaService) *VendasController 
 
 // POST /sales
 func (c *VendasController) Create(ctx *gin.Context) {
-	var input models.Venda
+	var input struct {
+		ProdutoID     int64  `json:"produto_id"`
+		Quantidade    int    `json:"quantidade"`
+		TipoPagamento string `json:"tipo_pagamento"`
+	}
 
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		gateways.Error(ctx, http.StatusBadRequest, "Dados inválidos para registro da venda")
 		return
 	}
 
+	// 1. Pega o empresa_id do token JWT usando o helper
+	empresaID, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, "Não foi possível identificar a empresa do usuário")
+		return
+	}
+
+	// 2. Pega o usuario_id do token JWT usando o helper
+	usuarioID, err := helpers.GetUserID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, "Não foi possível identificar o usuário autenticado")
+		return
+	}
+
+	// 3. Executa a venda passando o empresaID obtido com segurança do token
 	venda, err := c.vendaService.ExecutarVenda(
 		ctx.Request.Context(),
-		input.UsuarioID,
+		empresaID, // <-- Aqui está o empresa_id correto vindo do token
+		usuarioID,
 		input.ProdutoID,
 		input.Quantidade,
 		input.TipoPagamento,
@@ -57,26 +76,14 @@ func (c *VendasController) Cancel(ctx *gin.Context) {
 		return
 	}
 
-	// 1. Recupera o usuario_id injetado no contexto pelo Middleware de Auth
-	usuarioIDValue, exists := ctx.Get("usuario_id")
-	if !exists {
-		gateways.Error(ctx, http.StatusUnauthorized, "Usuário não autenticado")
+	// Recupera o usuario_id usando o helper padronizado
+	usuarioID, err := helpers.GetUserID(ctx)
+	if err != nil {
+		gateways.Error(ctx, http.StatusUnauthorized, "Usuário não autenticado ou ID inválido")
 		return
 	}
 
-	// 2. Garante a conversão correta do tipo (int64)
-	usuarioID, ok := usuarioIDValue.(int64)
-	if !ok {
-		// Trata caso o middleware tenha salvo como float64 (comum no unmarshal de JSON do JWT)
-		if floatVal, okFloat := usuarioIDValue.(float64); okFloat {
-			usuarioID = int64(floatVal)
-		} else {
-			gateways.Error(ctx, http.StatusInternalServerError, "Erro ao processar identificador do usuário")
-			return
-		}
-	}
-
-	// 3. Executa a regra de negócio do serviço com os IDs validados
+	// Executa a regra de negócio do serviço com os IDs validados
 	err = c.vendaService.CancelarVenda(
 		ctx.Request.Context(),
 		usuarioID,
@@ -95,8 +102,10 @@ func (c *VendasController) Cancel(ctx *gin.Context) {
 func (c *VendasController) GetSalesOfDay(ctx *gin.Context) {
 	empresaId, err := helpers.GetEmpresaID(ctx)
 	if err != nil {
-		gateways.Error(ctx, 500, "não foi possível pegar o id da empreas!")
+		gateways.Error(ctx, http.StatusUnauthorized, "Não foi possível pegar o ID da empresa!")
+		return
 	}
+
 	vendas, err := c.vendaService.ObterVendasDoDia(ctx.Request.Context(), empresaId)
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
@@ -110,8 +119,10 @@ func (c *VendasController) GetSalesOfDay(ctx *gin.Context) {
 func (c *VendasController) GetSalesOfMonth(ctx *gin.Context) {
 	empresaId, err := helpers.GetEmpresaID(ctx)
 	if err != nil {
-		gateways.Error(ctx, 500, "não foi possível pegar o id da empreas!")
+		gateways.Error(ctx, http.StatusUnauthorized, "Não foi possível pegar o ID da empresa!")
+		return
 	}
+
 	vendas, err := c.vendaService.ObterVendasDoMes(ctx.Request.Context(), empresaId)
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())

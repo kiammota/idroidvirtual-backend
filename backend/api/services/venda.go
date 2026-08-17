@@ -69,9 +69,9 @@ func (s *VendaService) ObterVendasDoMes(ctx context.Context, empresaId int64) ([
 }
 
 // ExecutarVenda realiza a venda, baixa o estoque e registra na auditoria.
-// clienteID = 0 significa Consumidor Final (opcional).
 func (s *VendaService) ExecutarVenda(
 	ctx context.Context,
+	empresaID int64, // <-- Adicionado o empresaID recebido do token
 	usuarioID int64,
 	produtoID int64,
 	quantidade int,
@@ -112,7 +112,7 @@ func (s *VendaService) ExecutarVenda(
 		return nil, errors.New("usuário associado à venda não foi encontrado")
 	}
 
-	// 4. Baixa de estoque
+	// 3. Baixa de estoque
 	if err := s.produtoRepo.DiminuirEstoqueTx(ctx, tx, produtoID, quantidade); err != nil {
 		return nil, fmt.Errorf("falha ao dar baixa no estoque: %w", err)
 	}
@@ -120,6 +120,7 @@ func (s *VendaService) ExecutarVenda(
 	valorTotal := produto.Preco * float64(quantidade)
 
 	venda := &models.Venda{
+		EmpresaID:     empresaID, // <-- Atribuído o ID correto obtido via token
 		ProdutoID:     produtoID,
 		UsuarioID:     usuarioID,
 		Quantidade:    quantidade,
