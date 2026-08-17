@@ -27,7 +27,7 @@ func NewOrdemServicoRepository(pool *pgxpool.Pool) *OrdemServicoRepository {
 
 func (r *OrdemServicoRepository) Criar(ctx context.Context, os *models.OrdemServico) error {
 	query := `
-		INSERT INTO ordens_servico (usuario_id, cliente_id, nome_servico, defeito, servicos, valor, custo, assinatura, status)
+		INSERT INTO ordens_servico (usuario_id,nome_servico, defeito, servicos, valor, custo, assinatura, status)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, numero_ordem, criado_em, atualizado_em
 	`

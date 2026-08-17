@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -34,9 +35,12 @@ func AuthJWT(tokenService *services.TokenService) gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		// Usa o TokenService para validar centralizadamente
+		// Usa o TokenService para validar centralizadamentea
 		claims, err := tokenService.ValidarToken(tokenString)
 		if err != nil {
+			// ADICIONE ESTA LINHA:
+			fmt.Printf("[DEBUG] Falha ao validar token: %v | Token recebido: %s\n", err, tokenString)
+
 			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"success": false,
 				"message": "Token expirado ou inválido",
@@ -44,7 +48,6 @@ func AuthJWT(tokenService *services.TokenService) gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-
 		// Grava os dados do token no contexto do Gin
 		ctx.Set("usuario_id", claims.UsuarioID)
 		ctx.Set("empresa_id", claims.EmpresaID) // <-- ADICIONADO AQUI

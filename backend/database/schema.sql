@@ -72,6 +72,27 @@ CREATE TABLE trocas (
 CREATE INDEX idx_trocas_imei ON trocas(imei);
 CREATE INDEX idx_trocas_empresa ON trocas(empresa_id);
 
+CREATE TABLE ordens_servico (
+    id BIGSERIAL PRIMARY KEY,
+    numero_ordem SERIAL UNIQUE,
+    usuario_id BIGINT NOT NULL,
+    cliente_id BIGINT NOT NULL,
+    nome_servico VARCHAR(255) NOT NULL,
+    defeito TEXT,
+    servicos TEXT,
+    valor NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    custo NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    assinatura TEXT,
+    status VARCHAR(50) NOT NULL,
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_usuario
+        FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id)
+        ON DELETE RESTRICT
+);
+
 -- =========================
 -- VENDAS
 -- =========================
