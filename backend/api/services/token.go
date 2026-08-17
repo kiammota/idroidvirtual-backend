@@ -10,28 +10,33 @@ import (
 )
 
 type TokenService struct {
-	SecretKey string
+	SecretKey             string
+	AccessTokenExpiration time.Duration
 }
 
-func NewTokenService(secret string) *TokenService {
+func NewTokenService(secret string, accessTokenExpiration time.Duration) *TokenService {
 	return &TokenService{
-		SecretKey: secret,
+		SecretKey:             secret,
+		AccessTokenExpiration: accessTokenExpiration,
 	}
 }
 
 // GerarToken gera um JWT contendo ID e Email do usuário.
 func (s *TokenService) GerarToken(empresaID, usuarioID int64, email string) (string, error) {
+	now := time.Now()
+
 	claims := models.JWTClaims{
 		EmpresaID: empresaID,
 		UsuarioID: usuarioID,
 		Email:     email,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(now.Add(s.AccessTokenExpiration)),
+			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
 	return token.SignedString([]byte(s.SecretKey))
 }
 
@@ -46,6 +51,7 @@ func (s *TokenService) ValidarToken(tokenString string) (*models.JWTClaims, erro
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("método de assinatura inválido")
 			}
+
 			return []byte(s.SecretKey), nil
 		},
 	)

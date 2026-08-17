@@ -16,9 +16,11 @@ const (
 )
 
 type Config struct {
-	Porta         string
-	URLBancoDados string
-	ChaveJWT      string
+	Porta                  string
+	URLBancoDados          string
+	ChaveJWT               string
+	AccessTokenExpiration  time.Duration
+	RefreshTokenExpiration time.Duration
 }
 
 func init() {
@@ -50,6 +52,18 @@ func CarregarConfig() Config {
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
+
+	accessTokenExpiration, err := time.ParseDuration(os.Getenv("ACCESS_TOKEN_EXPIRATION"))
+	if err != nil {
+		logger.Warn("ACCESS_TOKEN_EXPIRATION inválido, usando 24h")
+		accessTokenExpiration = 24 * time.Hour
+	}
+
+	refreshTokenExpiration, err := time.ParseDuration(os.Getenv("REFRESH_TOKEN_EXPIRATION"))
+	if err != nil {
+		logger.Warn("REFRESH_TOKEN_EXPIRATION inválido, usando 168h")
+		refreshTokenExpiration = 168 * time.Hour
+	}
 
 	if host == "" || port == "" || user == "" || dbName == "" {
 		logger.Warn("Algumas configurações do banco estão vazias")
@@ -91,9 +105,11 @@ func CarregarConfig() Config {
 	logger.OK("Configurações carregadas com sucesso")
 
 	return Config{
-		Porta:         porta,
-		URLBancoDados: url,
-		ChaveJWT:      jwt,
+		Porta:                  porta,
+		URLBancoDados:          url,
+		ChaveJWT:               jwt,
+		AccessTokenExpiration:  accessTokenExpiration,
+		RefreshTokenExpiration: refreshTokenExpiration,
 	}
 }
 
