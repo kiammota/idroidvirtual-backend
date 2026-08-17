@@ -49,6 +49,7 @@ func AuthJWT(tokenService *services.TokenService) gin.HandlerFunc {
 			return
 		}
 		// Grava os dados do token no contexto do Gin
+		ctx.Set("claims", claims)
 		ctx.Set("usuario_id", claims.UsuarioID)
 		ctx.Set("empresa_id", claims.EmpresaID) // <-- ADICIONADO AQUI
 		ctx.Set("email", claims.Email)

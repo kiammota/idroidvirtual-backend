@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -25,6 +26,7 @@ func NewProductController(repo *repositories.ProdutoRepository) *ProductControll
 func (c *ProductController) ListAll(ctx *gin.Context) {
 	empresaID, err := helpers.GetEmpresaID(ctx)
 	if err != nil {
+		fmt.Printf("[DEBUG] GetEmpresaID falhou: %v\n", err)
 		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
 		return
 	}
@@ -45,6 +47,7 @@ func (c *ProductController) ListAll(ctx *gin.Context) {
 func (c *ProductController) Create(ctx *gin.Context) {
 	empresaID, err := helpers.GetEmpresaID(ctx)
 	if err != nil {
+		fmt.Printf("[DEBUG] GetEmpresaID falhou: %v\n", err)
 		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
 		return
 	}
@@ -70,6 +73,7 @@ func (c *ProductController) Create(ctx *gin.Context) {
 func (c *ProductController) GetByCategory(ctx *gin.Context) {
 	empresaID, err := helpers.GetEmpresaID(ctx)
 	if err != nil {
+		fmt.Printf("[DEBUG] GetEmpresaID falhou: %v\n", err)
 		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
 		return
 	}
@@ -98,6 +102,7 @@ func (c *ProductController) Update(ctx *gin.Context) {
 	// a linha abaixo se não quiser validar a empresa aqui.
 	empresaID, err := helpers.GetEmpresaID(ctx)
 	if err != nil {
+		fmt.Printf("[DEBUG] GetEmpresaID falhou: %v\n", err)
 		gateways.Error(ctx, http.StatusUnauthorized, err.Error())
 		return
 	}
