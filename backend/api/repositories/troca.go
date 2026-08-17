@@ -29,6 +29,7 @@ func (r *TrocaRepository) Criar(
 
 	query := `
 		INSERT INTO trocas (
+			empresa_id,
 			modelo_aparelho,
 			imei,
 			valor_avaliacao,
@@ -36,7 +37,7 @@ func (r *TrocaRepository) Criar(
 			observacoes
 		)
 		VALUES (
-			$1, $2, $3, $4, $5
+			$1, $2, $3, $4, $5, $6
 		)
 		RETURNING id, criado_em
 	`
@@ -48,6 +49,7 @@ func (r *TrocaRepository) Criar(
 	return r.Pool.QueryRow(
 		ctx,
 		query,
+		t.EmpresaID,
 		t.ModeloAparelho,
 		t.IMEI,
 		t.ValorAvaliacao,
@@ -59,15 +61,17 @@ func (r *TrocaRepository) Criar(
 	)
 }
 
-// BuscarPorID retorna uma troca pelo seu ID
+// BuscarPorID retorna uma troca pelo seu ID e ID da Empresa
 func (r *TrocaRepository) BuscarPorID(
 	ctx context.Context,
 	id int64,
+	empresaID int64,
 ) (*models.Troca, error) {
 
 	query := `
 		SELECT
 			id,
+			empresa_id,
 			modelo_aparelho,
 			imei,
 			valor_avaliacao,
@@ -75,7 +79,7 @@ func (r *TrocaRepository) BuscarPorID(
 			observacoes,
 			criado_em
 		FROM trocas
-		WHERE id = $1
+		WHERE id = $1 AND empresa_id = $2
 	`
 
 	var t models.Troca
@@ -84,8 +88,10 @@ func (r *TrocaRepository) BuscarPorID(
 		ctx,
 		query,
 		id,
+		empresaID,
 	).Scan(
 		&t.ID,
+		&t.EmpresaID,
 		&t.ModeloAparelho,
 		&t.IMEI,
 		&t.ValorAvaliacao,
@@ -104,15 +110,17 @@ func (r *TrocaRepository) BuscarPorID(
 	return &t, nil
 }
 
-// Listar retorna uma lista paginada de trocas
+// Listar retorna uma lista paginada de trocas da empresa
 func (r *TrocaRepository) Listar(
 	ctx context.Context,
+	empresaID int64,
 	limit, offset int,
 ) ([]*models.Troca, error) {
 
 	query := `
 		SELECT
 			id,
+			empresa_id,
 			modelo_aparelho,
 			imei,
 			valor_avaliacao,
@@ -120,11 +128,12 @@ func (r *TrocaRepository) Listar(
 			observacoes,
 			criado_em
 		FROM trocas
+		WHERE empresa_id = $1
 		ORDER BY criado_em DESC
-		LIMIT $1 OFFSET $2
+		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.Pool.Query(ctx, query, limit, offset)
+	rows, err := r.Pool.Query(ctx, query, empresaID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +145,7 @@ func (r *TrocaRepository) Listar(
 		var t models.Troca
 		err := rows.Scan(
 			&t.ID,
+			&t.EmpresaID,
 			&t.ModeloAparelho,
 			&t.IMEI,
 			&t.ValorAvaliacao,
@@ -152,9 +162,10 @@ func (r *TrocaRepository) Listar(
 	return trocas, rows.Err()
 }
 
-// ListarPorIntervaloMeses busca trocas criadas nos últimos N meses com paginação
+// ListarPorIntervaloMeses busca trocas de uma empresa criadas nos últimos N meses com paginação
 func (r *TrocaRepository) ListarPorIntervaloMeses(
 	ctx context.Context,
+	empresaID int64,
 	meses int,
 	limit, offset int,
 ) ([]*models.Troca, error) {
@@ -164,6 +175,7 @@ func (r *TrocaRepository) ListarPorIntervaloMeses(
 	query := `
 		SELECT
 			id,
+			empresa_id,
 			modelo_aparelho,
 			imei,
 			valor_avaliacao,
@@ -171,12 +183,12 @@ func (r *TrocaRepository) ListarPorIntervaloMeses(
 			observacoes,
 			criado_em
 		FROM trocas
-		WHERE criado_em >= $1
+		WHERE empresa_id = $1 AND criado_em >= $2
 		ORDER BY criado_em DESC
-		LIMIT $2 OFFSET $3
+		LIMIT $3 OFFSET $4
 	`
 
-	rows, err := r.Pool.Query(ctx, query, dataInicio, limit, offset)
+	rows, err := r.Pool.Query(ctx, query, empresaID, dataInicio, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -188,6 +200,7 @@ func (r *TrocaRepository) ListarPorIntervaloMeses(
 		var t models.Troca
 		err := rows.Scan(
 			&t.ID,
+			&t.EmpresaID,
 			&t.ModeloAparelho,
 			&t.IMEI,
 			&t.ValorAvaliacao,
@@ -204,26 +217,29 @@ func (r *TrocaRepository) ListarPorIntervaloMeses(
 	return trocas, rows.Err()
 }
 
-// ListarUltimoMes retorna as trocas do último mês
+// ListarUltimoMes retorna as trocas da empresa do último mês
 func (r *TrocaRepository) ListarUltimoMes(
 	ctx context.Context,
+	empresaID int64,
 	limit, offset int,
 ) ([]*models.Troca, error) {
-	return r.ListarPorIntervaloMeses(ctx, 1, limit, offset)
+	return r.ListarPorIntervaloMeses(ctx, empresaID, 1, limit, offset)
 }
 
-// ListarUltimosTresMeses retorna as trocas dos últimos 3 meses
+// ListarUltimosTresMeses retorna as trocas da empresa dos últimos 3 meses
 func (r *TrocaRepository) ListarUltimosTresMeses(
 	ctx context.Context,
+	empresaID int64,
 	limit, offset int,
 ) ([]*models.Troca, error) {
-	return r.ListarPorIntervaloMeses(ctx, 3, limit, offset)
+	return r.ListarPorIntervaloMeses(ctx, empresaID, 3, limit, offset)
 }
 
-// ListarUltimosSeisMeses retorna as trocas dos últimos 6 meses
+// ListarUltimosSeisMeses retorna as trocas da empresa dos últimos 6 meses
 func (r *TrocaRepository) ListarUltimosSeisMeses(
 	ctx context.Context,
+	empresaID int64,
 	limit, offset int,
 ) ([]*models.Troca, error) {
-	return r.ListarPorIntervaloMeses(ctx, 6, limit, offset)
+	return r.ListarPorIntervaloMeses(ctx, empresaID, 6, limit, offset)
 }

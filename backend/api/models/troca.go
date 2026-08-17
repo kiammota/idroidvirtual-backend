@@ -4,6 +4,7 @@ import "time"
 
 type Troca struct {
 	ID             int64     `json:"id"`
+	EmpresaID      int64     `json:"empresa_id"`
 	ModeloAparelho string    `json:"modelo_aparelho"`
 	IMEI           string    `json:"imei"`
 	ValorAvaliacao float64   `json:"valor_avaliacao"`
