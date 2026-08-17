@@ -39,12 +39,12 @@ func NewVendaService(
 	}
 }
 
-func (s *VendaService) ListarPorPeriodo(ctx context.Context, inicio time.Time, fim time.Time) ([]models.Venda, error) {
+func (s *VendaService) ListarPorPeriodo(ctx context.Context, empresaID int64, inicio time.Time, fim time.Time) ([]models.Venda, error) {
 	if inicio.After(fim) {
 		return nil, errors.New("a data inicial não pode ser posterior à data final")
 	}
 
-	vendas, err := s.vendaRepo.BuscarPorPeriodo(ctx, inicio, fim)
+	vendas, err := s.vendaRepo.BuscarPorPeriodo(ctx, empresaID, inicio, fim)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar vendas por período: %w", err)
 	}
@@ -52,20 +52,20 @@ func (s *VendaService) ListarPorPeriodo(ctx context.Context, inicio time.Time, f
 	return vendas, nil
 }
 
-func (s *VendaService) ObterVendasDoDia(ctx context.Context) ([]models.Venda, error) {
+func (s *VendaService) ObterVendasDoDia(ctx context.Context, empresaID int64) ([]models.Venda, error) {
 	agora := time.Now()
 	inicioDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 0, 0, 0, 0, agora.Location())
 	fimDia := time.Date(agora.Year(), agora.Month(), agora.Day(), 23, 59, 59, 999999999, agora.Location())
 
-	return s.vendaRepo.BuscarPorPeriodo(ctx, inicioDia, fimDia)
+	return s.vendaRepo.BuscarPorPeriodo(ctx, empresaID, inicioDia, fimDia)
 }
 
-func (s *VendaService) ObterVendasDoMes(ctx context.Context) ([]models.Venda, error) {
+func (s *VendaService) ObterVendasDoMes(ctx context.Context, empresaId int64) ([]models.Venda, error) {
 	agora := time.Now()
 	inicioMes := time.Date(agora.Year(), agora.Month(), 1, 0, 0, 0, 0, agora.Location())
 	fimMes := inicioMes.AddDate(0, 1, 0).Add(-time.Nanosecond)
 
-	return s.vendaRepo.BuscarPorPeriodo(ctx, inicioMes, fimMes)
+	return s.vendaRepo.BuscarPorPeriodo(ctx, empresaId, inicioMes, fimMes)
 }
 
 // ExecutarVenda realiza a venda, baixa o estoque e registra na auditoria.

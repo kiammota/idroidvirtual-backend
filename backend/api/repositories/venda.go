@@ -1,11 +1,10 @@
 package repositories
 
 import (
+	"backend/models"
 	"context"
 	"errors"
 	"time"
-
-	"backend/models"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,9 +22,9 @@ func NewVendaRepository(pool *pgxpool.Pool) VendaRepository {
 func (r *VendaRepository) CriarTx(ctx context.Context, tx pgx.Tx, v *models.Venda) error {
 	query := `
 		INSERT INTO vendas (
-			produto_id, usuario_id, quantidade, total, tipo_pagamento, status
+			empresa_id, produto_id, usuario_id, quantidade, total, tipo_pagamento, status
 		) VALUES (
-			$1, $2, $3, $4, $5, $6
+			$1, $2, $3, $4, $5, $6, $7
 		)
 		RETURNING id, criado_em
 	`
@@ -37,6 +36,7 @@ func (r *VendaRepository) CriarTx(ctx context.Context, tx pgx.Tx, v *models.Vend
 	return tx.QueryRow(
 		ctx,
 		query,
+		v.EmpresaID,
 		v.ProdutoID,
 		v.UsuarioID,
 		v.Quantidade,
@@ -50,9 +50,9 @@ func (r *VendaRepository) CriarTx(ctx context.Context, tx pgx.Tx, v *models.Vend
 func (r *VendaRepository) Criar(ctx context.Context, v *models.Venda) error {
 	query := `
 		INSERT INTO vendas (
-			produto_id, usuario_id, quantidade, total, tipo_pagamento, status
+			empresa_id, produto_id, usuario_id, quantidade, total, tipo_pagamento, status
 		) VALUES (
-			$1, $2, $3, $4, $5, $6
+			$1, $2, $3, $4, $5, $6, $7
 		)
 		RETURNING id, criado_em
 	`
@@ -64,6 +64,7 @@ func (r *VendaRepository) Criar(ctx context.Context, v *models.Venda) error {
 	return r.Pool.QueryRow(
 		ctx,
 		query,
+		v.EmpresaID,
 		v.ProdutoID,
 		v.UsuarioID,
 		v.Quantidade,
@@ -73,10 +74,10 @@ func (r *VendaRepository) Criar(ctx context.Context, v *models.Venda) error {
 	).Scan(&v.ID, &v.CriadoEm)
 }
 
-// BuscarPorID retorna uma venda específica pelo ID incluindo o status
+// BuscarPorID retorna uma venda específica pelo ID e pela Empresa
 func (r *VendaRepository) BuscarPorID(ctx context.Context, id int64) (*models.Venda, error) {
 	query := `
-		SELECT id, produto_id, usuario_id, quantidade, total, tipo_pagamento, status, criado_em
+		SELECT id, empresa_id, produto_id, usuario_id, quantidade, total, tipo_pagamento, status, criado_em
 		FROM vendas
 		WHERE id = $1
 	`
@@ -84,6 +85,7 @@ func (r *VendaRepository) BuscarPorID(ctx context.Context, id int64) (*models.Ve
 	var v models.Venda
 	err := r.Pool.QueryRow(ctx, query, id).Scan(
 		&v.ID,
+		&v.EmpresaID,
 		&v.ProdutoID,
 		&v.UsuarioID,
 		&v.Quantidade,
@@ -103,16 +105,16 @@ func (r *VendaRepository) BuscarPorID(ctx context.Context, id int64) (*models.Ve
 	return &v, nil
 }
 
-// BuscarPorPeriodo retorna a lista de vendas realizadas entre duas datas
-func (r *VendaRepository) BuscarPorPeriodo(ctx context.Context, inicio, fim time.Time) ([]models.Venda, error) {
+// BuscarPorPeriodo retorna a lista de vendas de uma empresa realizadas entre duas datas
+func (r *VendaRepository) BuscarPorPeriodo(ctx context.Context, empresaID int64, inicio, fim time.Time) ([]models.Venda, error) {
 	query := `
-		SELECT id, produto_id, usuario_id, quantidade, total, tipo_pagamento, status, criado_em
+		SELECT id, empresa_id, produto_id, usuario_id, quantidade, total, tipo_pagamento, status, criado_em
 		FROM vendas
-		WHERE criado_em >= $1 AND criado_em <= $2
+		WHERE empresa_id = $1 AND criado_em >= $2 AND criado_em <= $3
 		ORDER BY criado_em DESC
 	`
 
-	rows, err := r.Pool.Query(ctx, query, inicio, fim)
+	rows, err := r.Pool.Query(ctx, query, empresaID, inicio, fim)
 	if err != nil {
 		return nil, err
 	}
@@ -123,6 +125,7 @@ func (r *VendaRepository) BuscarPorPeriodo(ctx context.Context, inicio, fim time
 		var v models.Venda
 		err := rows.Scan(
 			&v.ID,
+			&v.EmpresaID,
 			&v.ProdutoID,
 			&v.UsuarioID,
 			&v.Quantidade,
@@ -140,16 +143,17 @@ func (r *VendaRepository) BuscarPorPeriodo(ctx context.Context, inicio, fim time
 	return vendas, nil
 }
 
-// Listar retorna o histórico de vendas com suporte a paginação
-func (r *VendaRepository) Listar(ctx context.Context, limit, offset int) ([]models.Venda, error) {
+// Listar retorna o histórico de vendas de uma empresa com suporte a paginação
+func (r *VendaRepository) Listar(ctx context.Context, empresaID int64, limit, offset int) ([]models.Venda, error) {
 	query := `
-		SELECT id, produto_id, usuario_id, quantidade, total, tipo_pagamento, status, criado_em
+		SELECT id, empresa_id, produto_id, usuario_id, quantidade, total, tipo_pagamento, status, criado_em
 		FROM vendas
+		WHERE empresa_id = $1
 		ORDER BY criado_em DESC
-		LIMIT $1 OFFSET $2
+		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.Pool.Query(ctx, query, limit, offset)
+	rows, err := r.Pool.Query(ctx, query, empresaID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -160,6 +164,7 @@ func (r *VendaRepository) Listar(ctx context.Context, limit, offset int) ([]mode
 		var v models.Venda
 		err := rows.Scan(
 			&v.ID,
+			&v.EmpresaID,
 			&v.ProdutoID,
 			&v.UsuarioID,
 			&v.Quantidade,
@@ -177,16 +182,16 @@ func (r *VendaRepository) Listar(ctx context.Context, limit, offset int) ([]mode
 	return vendas, nil
 }
 
-// ObterFaturamentoMesAtual retorna a soma total das vendas no mês vigente (excluindo canceladas)
-func (r *VendaRepository) ObterFaturamentoMesAtual(ctx context.Context) (float64, error) {
+// ObterFaturamentoMesAtual retorna a soma total das vendas no mês vigente para a empresa
+func (r *VendaRepository) ObterFaturamentoMesAtual(ctx context.Context, empresaID int64) (float64, error) {
 	query := `
 		SELECT COALESCE(SUM(total), 0)
 		FROM vendas
-		WHERE criado_em >= DATE_TRUNC('month', CURRENT_DATE) AND status != 'CANCELADA'
+		WHERE empresa_id = $1 AND criado_em >= DATE_TRUNC('month', CURRENT_DATE) AND status != 'CANCELADA'
 	`
 
 	var total float64
-	err := r.Pool.QueryRow(ctx, query).Scan(&total)
+	err := r.Pool.QueryRow(ctx, query, empresaID).Scan(&total)
 	if err != nil {
 		return 0, err
 	}
@@ -194,16 +199,16 @@ func (r *VendaRepository) ObterFaturamentoMesAtual(ctx context.Context) (float64
 	return total, nil
 }
 
-// ObterFaturamentoPorPeriodo retorna o faturamento entre duas datas (excluindo canceladas)
-func (r *VendaRepository) ObterFaturamentoPorPeriodo(ctx context.Context, inicio, fim time.Time) (float64, error) {
+// ObterFaturamentoPorPeriodo retorna o faturamento de uma empresa entre duas datas
+func (r *VendaRepository) ObterFaturamentoPorPeriodo(ctx context.Context, empresaID int64, inicio, fim time.Time) (float64, error) {
 	query := `
 		SELECT COALESCE(SUM(total), 0)
 		FROM vendas
-		WHERE criado_em >= $1 AND criado_em <= $2 AND status != 'CANCELADA'
+		WHERE empresa_id = $1 AND criado_em >= $2 AND criado_em <= $3 AND status != 'CANCELADA'
 	`
 
 	var total float64
-	err := r.Pool.QueryRow(ctx, query, inicio, fim).Scan(&total)
+	err := r.Pool.QueryRow(ctx, query, empresaID, inicio, fim).Scan(&total)
 	if err != nil {
 		return 0, err
 	}
@@ -211,7 +216,7 @@ func (r *VendaRepository) ObterFaturamentoPorPeriodo(ctx context.Context, inicio
 	return total, nil
 }
 
-// CancelarTx altera o status da venda para CANCELADA dentro da transação
+// CancelarTx altera o status da venda para CANCELADA dentro da transação, garantindo que pertença à empresa
 func (r *VendaRepository) CancelarTx(ctx context.Context, tx pgx.Tx, vendaID int64) error {
 	query := `
 		UPDATE vendas
@@ -225,32 +230,7 @@ func (r *VendaRepository) CancelarTx(ctx context.Context, tx pgx.Tx, vendaID int
 	}
 
 	if cmdTag.RowsAffected() == 0 {
-		return errors.New("venda não encontrada ou já estava cancelada")
-	}
-
-	return nil
-}
-
-// AumentarEstoqueTx incrementa o estoque dentro de uma transação apenas pelo ID do produto
-func (r *ProdutoRepository) AumentarEstoqueTx(ctx context.Context, tx pgx.Tx, id int64, quantidade int) error {
-	if quantidade <= 0 {
-		return errors.New("a quantidade a ser adicionada deve ser maior que zero")
-	}
-
-	query := `
-		UPDATE produtos
-		SET estoque = estoque + $1,
-			atualizado_em = NOW()
-		WHERE id = $2
-	`
-
-	cmdTag, err := tx.Exec(ctx, query, quantidade, id)
-	if err != nil {
-		return err
-	}
-
-	if cmdTag.RowsAffected() == 0 {
-		return errors.New("nenhum produto encontrado para aumentar o estoque")
+		return errors.New("venda não encontrada, já estava cancelada ou não pertence a esta empresa")
 	}
 
 	return nil

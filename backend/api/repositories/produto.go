@@ -263,6 +263,56 @@ func (r *ProdutoRepository) Atualizar(ctx context.Context, p *models.Produto) er
 	return nil
 }
 
+// AlterarEstoqueTx define o estoque de um produto para uma quantidade específica dentro de uma transação, filtrando pela empresa
+func (r *ProdutoRepository) AlterarEstoqueTx(ctx context.Context, tx pgx.Tx, empresaID, produtoID int64, novaQuantidade int) error {
+	if novaQuantidade < 0 {
+		return errors.New("a quantidade em estoque não pode ser negativa")
+	}
+
+	query := `
+		UPDATE produtos
+		SET estoque = $1,
+			atualizado_em = NOW()
+		WHERE id = $2 AND empresa_id = $3
+	`
+
+	cmdTag, err := tx.Exec(ctx, query, novaQuantidade, produtoID, empresaID)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return errors.New("nenhum produto encontrado para alterar o estoque ou o produto não pertence a esta empresa")
+	}
+
+	return nil
+}
+
+// AlterarEstoque define o estoque de um produto para uma quantidade específica diretamente pelo pool, filtrando pela empresa
+func (r *ProdutoRepository) AlterarEstoque(ctx context.Context, produtoID int64, novaQuantidade int) error {
+	if novaQuantidade < 0 {
+		return errors.New("a quantidade em estoque não pode ser negativa")
+	}
+
+	query := `
+		UPDATE produtos
+		SET estoque = $1,
+			atualizado_em = NOW()
+		WHERE id = $2
+	`
+
+	cmdTag, err := r.Pool.Exec(ctx, query, novaQuantidade, produtoID)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return errors.New("nenhum produto encontrado para alterar o estoque ou o produto não pertence a esta empresa")
+	}
+
+	return nil
+}
+
 // AumentarEstoque incrementa a quantidade do produto apenas pelo ID
 func (r *ProdutoRepository) AumentarEstoque(ctx context.Context, id int64, quantidade int) error {
 	if quantidade <= 0 {
@@ -348,22 +398,25 @@ func (r *ProdutoRepository) DiminuirEstoqueTx(ctx context.Context, tx pgx.Tx, id
 	return nil
 }
 
-// AlterarEstoque atualiza diretamente o estoque do produto somando ou subtraindo a quantidade informada apenas pelo ID
-func (r *ProdutoRepository) AlterarEstoque(ctx context.Context, id int64, quantidade int) error {
+func (r *ProdutoRepository) AumentarEstoqueTx(ctx context.Context, tx pgx.Tx, produtoID int64, quantidade int) error {
+	if quantidade <= 0 {
+		return errors.New("a quantidade a ser adicionada deve ser maior que zero")
+	}
+
 	query := `
 		UPDATE produtos
 		SET estoque = estoque + $1,
 			atualizado_em = NOW()
-		WHERE id = $2
+		WHERE id = $2 
 	`
 
-	cmdTag, err := r.Pool.Exec(ctx, query, quantidade, id)
+	cmdTag, err := tx.Exec(ctx, query, quantidade, produtoID)
 	if err != nil {
 		return err
 	}
 
 	if cmdTag.RowsAffected() == 0 {
-		return errors.New("nenhum produto encontrado para alterar o estoque")
+		return errors.New("nenhum produto encontrado para aumentar o estoque ou o produto não pertence a esta empresa")
 	}
 
 	return nil

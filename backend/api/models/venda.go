@@ -5,6 +5,7 @@ import "time"
 type Venda struct {
 	ID            int64     `json:"id"`
 	ProdutoID     int64     `json:"produto_id"`
+	EmpresaID     int64     `json:"empresa_id"`
 	UsuarioID     int64     `json:"usuario_id"`
 	ClienteID     int64     `json:"cliente_id"`
 	Quantidade    int       `json:"quantidade"`

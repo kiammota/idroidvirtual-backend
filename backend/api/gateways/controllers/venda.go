@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"backend/gateways"
+	"backend/gateways/helpers"
 	"backend/models"
 	"backend/services"
 
@@ -93,7 +94,11 @@ func (c *VendasController) Cancel(ctx *gin.Context) {
 
 // GET /sales/dia
 func (c *VendasController) GetSalesOfDay(ctx *gin.Context) {
-	vendas, err := c.vendaService.ObterVendasDoDia(ctx.Request.Context())
+	empresaId, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, 500, "não foi possível pegar o id da empreas!")
+	}
+	vendas, err := c.vendaService.ObterVendasDoDia(ctx.Request.Context(), empresaId)
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -104,7 +109,11 @@ func (c *VendasController) GetSalesOfDay(ctx *gin.Context) {
 
 // GET /sales/mes
 func (c *VendasController) GetSalesOfMonth(ctx *gin.Context) {
-	vendas, err := c.vendaService.ObterVendasDoMes(ctx.Request.Context())
+	empresaId, err := helpers.GetEmpresaID(ctx)
+	if err != nil {
+		gateways.Error(ctx, 500, "não foi possível pegar o id da empreas!")
+	}
+	vendas, err := c.vendaService.ObterVendasDoMes(ctx.Request.Context(), empresaId)
 	if err != nil {
 		gateways.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
